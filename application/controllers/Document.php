@@ -13,7 +13,7 @@ use PhpOffice\PhpWord\SimpleType\TblWidth;
 use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\Shared\Html;
 use PhpOffice\PhpWord\Element\TextRun;
-use Google_Client;
+use Google\Client;
 // use Dompdf\Dompdf;
 
 class Document extends CI_Controller
@@ -243,6 +243,7 @@ class Document extends CI_Controller
                 $document_number = $this->mod_document->get_document_number("%" . $document_number)[0]["last_document_number"] . "/" . $document_number;
 
                 $data["document_number"]  = strtoupper($document_number);
+                $data['user_create_id'] = $_SESSION['user']['username'];
             }
             $id = $this->mod_document->add_document($type, $data);
         }
@@ -268,11 +269,6 @@ class Document extends CI_Controller
     public function cetak($type, $id)
     {
         $data = $this->mod_document->get_document($id, $type)[0];
-        $data_his_pd = $this->mod_document_his->get_document_his($id, 'PAC');
-        $data_his_ap = $this->mod_document_his->get_document_his($id, 'AAC');
-        $data_his_ac = $this->mod_document_his->get_document_his($id, 'ACD');
-        $data_his_dr = $this->mod_document_his->get_document_his($id, 'ADF');
-        $data_his_fn = $this->mod_document_his->get_document_his($id, 'AFA');
 
         // if ($data["print"] == 2) {
         //     echo "Dokumen sudah pernah dicetak.";
@@ -298,6 +294,12 @@ class Document extends CI_Controller
         $filename .= str_replace('/', '-', $data["doctype_name"]) . "-" . $data["company_code"] . "-" . str_replace("/", "-", $data["document_number"]) . "-" . date("YmdHis");
 
         if ($type == "ca") {
+            $data_his_pd = $this->mod_document_his->get_document_his($id, 'PAC');
+            $data_his_ap = $this->mod_document_his->get_document_his($id, 'AAC');
+            $data_his_ac = $this->mod_document_his->get_document_his($id, 'ACD');
+            $data_his_dr = $this->mod_document_his->get_document_his($id, 'ADF');
+            $data_his_fn = $this->mod_document_his->get_document_his($id, 'AFA');
+
             $data_ = array(
                 "document_number" => $data["document_number"],
                 "user_create" => $data["user_create"],
@@ -523,7 +525,7 @@ class Document extends CI_Controller
 
     function send_notif($to, $title, $body)
     {
-        $client = new Google_Client();
+        $client = new Client();
         $client->setAuthConfig('yortech-id-firebase-adminsdk-fbsvc-271ff775bd.json');
         $client->addScope('https://www.googleapis.com/auth/cloud-platform');
         $accessToken = $client->fetchAccessTokenWithAssertion();

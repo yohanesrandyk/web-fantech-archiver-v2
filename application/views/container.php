@@ -334,7 +334,7 @@ function show_confirm_modal($id)
                     </button>
                 </div>
                 <div class="modal-body">
-                    Apakah Anda yakin melanjutkan proses ini?
+                    Apakah Anda yakin melanjutkan proses ini? <span id="modal-message"></span>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -351,23 +351,19 @@ function show_confirm_modal($id)
                 var form = $("#btn-submit-<?= $id ?>").closest("form");
                 form.find("input[required]").each(function(i, e) {
                     if ($(e).val() == null || $(e).val() === "") {
-                        // Find the closest form-group and get the label text
                         var labelText = $(e).closest('.form-group').find('label').text().trim();
-
                         errmsg = "Input " + labelText + " masih kosong";
                     }
                 });
                 form.find("select[required]").each(function(i, e) {
                     if ($(e).val() == null || $(e).val() === "") {
                         var labelText = $(e).closest('.form-group').find('label').text().trim();
-
                         errmsg = "Input " + labelText + " masih kosong";
                     }
                 });
                 form.find("textarea[required]").each(function(i, e) {
                     if ($(e).val() == null || $(e).val() == "") {
                         var labelText = $(e).closest('.form-group').find('label').text().trim();
-
                         errmsg = "Input " + labelText + " masih kosong";
                     }
                 });
@@ -379,7 +375,8 @@ function show_confirm_modal($id)
             }, 500);
         });
 
-        function show_confirm_modal_<?= $id ?>() {
+        function show_confirm_modal_<?= $id ?>($message) {
+            $("#modal-submit-<?= $id ?>").find("#modal-message").text($message);
             $("#modal-submit-<?= $id ?>").modal("show");
         }
     </script>

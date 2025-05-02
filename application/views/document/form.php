@@ -2,9 +2,11 @@
 $isdisabled = true;
 
 $approvecode = $document['approve_code'] ?? 'P';
+$rejectcode = $document['reject_code'] ?? 'P';
 $isnew = substr($approvecode, 0, 1) == 'P';
-$isinform = ($type == 'all' && ($document['type'] ?? 'A') == 'A') || $type != 'all';
+$isinform = ($type == 'all' && ($document['type'] ?? '-') == 'A') || $type != 'all';
 $iscanapprove = substr($approvecode, 0, 1) == 'A';
+$iscanapprove = $iscanapprove && ($document['approve_code'] != 'A' || ($document['approve_code'] == 'A' && ($document['user_create_id'] ?? '') != $_SESSION['user']['id']));
 $iscancomplete = $approvecode == 'A';
 
 if (
@@ -221,7 +223,7 @@ if (
                                     <th>DESKRIPSI</th>
                                     <th>FILE</th>
                                     <th>
-                                        <button type="button" class="btn btn-xs btn-icon btn-success <?= $isdisabled == true ? 'disabled' : '' ?>" <?= $isdisabled == true ? 'disabled' : '' ?> id="add-dfile"><i class="fas fa-plus"></i></button>
+                                        <button type="button" class="btn btn-xs btn-icon btn-success <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> id="add-dfile"><i class="fas fa-plus"></i></button>
                                     </th>
                                 </tr>
                             </thead>
@@ -239,10 +241,10 @@ if (
                                             <?php form_input(label: null, type: "hidden", name: 'file_f_[]', value: $row['file'] ?? '', form: false, required: false, disabled: $isdisabled) ?>
                                             <?php form_input(label: null, type: 'file', name: 'file_f[]', value: '', form: false, required: false, accept: ".pdf, .jpg, .jpeg, .png", disabled: $isdisabled) ?>
 
-                                            <button type="button" class="btn btn-block btn-primary btn-sm mb-1 <?= $isdisabled == true ? 'disabled' : '' ?>" <?= $isdisabled == true ? 'disabled' : '' ?> onclick="$(this).closest('td').find('.file_f').click()"><i class="la la-paperclip"></i> ATTACH</button>
+                                            <button type="button" class="btn btn-block btn-primary btn-sm mb-1 <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="$(this).closest('td').find('.file_f').click()"><i class="la la-paperclip"></i> ATTACH</button>
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled == true ? 'disabled' : '' ?>" <?= $isdisabled == true ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
+                                            <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
                                         </td>
                                     </tr>
                                 <?php } ?>
@@ -291,10 +293,10 @@ if (
                                             <?php form_input(label: null, type: "hidden", name: 'file_[]', value: $row['file'] ?? '', form: false, required: false, disabled: $isdisabled) ?>
                                             <?php form_input(label: null, type: 'file', name: 'file[]', value: '', form: false, required: false, accept: ".pdf, .jpg, .jpeg, .png", disabled: $isdisabled) ?>
 
-                                            <button type="button" class="btn btn-block btn-primary btn-sm mb-1 <?= $isdisabled == true ? 'disabled' : '' ?>" <?= $isdisabled == true ? 'disabled' : '' ?> onclick="$(this).closest('td').find('.file').click()"><i class="la la-paperclip"></i> ATTACH</button>
+                                            <button type="button" class="btn btn-block btn-primary btn-sm mb-1 <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="$(this).closest('td').find('.file').click()"><i class="la la-paperclip"></i> ATTACH</button>
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled == true ? 'disabled' : '' ?>" <?= $isdisabled == true ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
+                                            <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
                                         </td>
                                     </tr>
                                 <?php } ?>
@@ -337,10 +339,10 @@ if (
                                             <?php form_input(label: null, type: "hidden", name: 'file_[]', value: $row['file'] ?? '', form: false, required: false, disabled: $isdisabled) ?>
                                             <?php form_input(label: null, type: 'file', name: 'file[]', value: $row['file'] ?? '', form: false, required: false, accept: ".pdf, .jpg, .jpeg, .png", disabled: $isdisabled) ?>
 
-                                            <button type="button" class="btn btn-icon btn-primary btn-xs mb-1 <?= $isdisabled == true ? 'disabled' : '' ?>" <?= $isdisabled == true ? 'disabled' : '' ?> onclick="$(this).closest('td').find('.file').click()"><i class="la la-paperclip"></i></button>
+                                            <button type="button" class="btn btn-icon btn-primary btn-xs mb-1 <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="$(this).closest('td').find('.file').click()"><i class="la la-paperclip"></i></button>
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled == true ? 'disabled' : '' ?>" <?= $isdisabled == true ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
+                                            <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
                                         </td>
                                     </tr>
                                 <?php } ?>
@@ -375,7 +377,7 @@ if (
                                             <?php form_input(label: null, name: 'subtotal[]', value: $row['subtotal'] ?? '', form: false, required: false, disabled: true) ?>
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled == true ? 'disabled' : '' ?>" <?= $isdisabled == true ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
+                                            <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
                                         </td>
                                     </tr>
                                 <?php } ?>
@@ -437,7 +439,7 @@ if (
                     <?php
                     $options = [];
                     foreach ($docstatus as $row) {
-                        if ($row['approve_code'] == 'A' && $document['user_create_id'] != $_SESSION['user']['id']) {
+                        if ($row['approve_code'] == 'A' && ($document['user_create_id'] ?? '') != $_SESSION['user']['id']) {
                             continue;
                         }
                         $options[] = array($row['code'], $row['name'] . ' [' . $row['code'] . ']');
@@ -446,7 +448,7 @@ if (
                         label: 'Status',
                         name: 'status',
                         options: $options,
-                        value: $document['status'] ?? 'NW',
+                        value: $document['status'] ?? '-',
                         func: "set_division(this)"
                     ) ?>
                 </div>
@@ -481,7 +483,7 @@ if (
                 name: 'note',
                 value: $document['note'] ?? '',
                 required: false,
-                disabled: $isdisabled && !$iscanapprove
+                disabled: !($isdisabled && $iscanapprove && $isinform)
             ) ?>
             <div class="text-right">
                 <?php
@@ -495,17 +497,17 @@ if (
                     <button class="btn btn-success" id="btn-save" type="button" onclick="save_approve()"><i class="la la-upload"></i> Kirim</button>
                 <?php } ?>
                 <?php
-                if ($iscanapprove) {
+                if ($iscanapprove && $isinform) {
                 ?>
                     <button class="btn btn-success" type="button" onclick="save_approve()"><i class="la la-check"></i> Approve</button>
-                    <button class="btn btn-danger" type="button" onclick="save_reject()"><i class="la la-reply"></i> Reject</button>
+                    <button class="btn btn-warning" type="button" onclick="save_revisi()"><i class="la la-reply"></i> Revisi</button>
+                    <button class="btn btn-danger" type="button" onclick="save_reject()"><i class="la la-close"></i> Reject</button>
                 <?php
                 }
                 ?>
             </div>
         </div>
     </div>
-
 </form>
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote.min.js"></script>
@@ -556,7 +558,12 @@ if (
     }
 
     function save_reject() {
-        $("#status").val("<?= $approvecode ?>").change();
+        $("#status").val("R").change();
+        show_confirm_modal_form("Data anda akan ditolak ke tahapan " + $("#status option:selected").text() + ".");
+    }
+
+    function save_revisi() {
+        $("#status").val("<?= $rejectcode ?>").change();
         show_confirm_modal_form("Data anda akan ditolak ke tahapan " + $("#status option:selected").text() + ".");
     }
 </script>

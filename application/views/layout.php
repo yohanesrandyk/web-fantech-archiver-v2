@@ -177,7 +177,7 @@ if (!isset($_SESSION['user'])) {
         }
 
         div#loading-image {
-            background: rgba(255, 255, 255, 1.0) url('https://fantech.id/wp-content/uploads/2023/06/Fantech-Indonesia-2048x360.png') no-repeat 50% 50%;
+            /* background: rgba(255, 255, 255, 1.0) url('https://fantech.id/wp-content/uploads/2023/06/Fantech-Indonesia-2048x360.png') no-repeat 50% 50%; */
             background-size: contain;
         }
 
