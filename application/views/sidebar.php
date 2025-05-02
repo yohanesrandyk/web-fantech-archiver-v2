@@ -2,6 +2,7 @@
     <div class="brand flex-column-auto" id="kt_brand">
         <a href="#" class="brand-logo">
             <img height="25" class="mt-5 ml-2" alt="Logo" src="https://fantech.id/wp-content/uploads/2023/06/Fantech-Indonesia-2048x360.png" />
+            <!-- <img height="25" class="mt-5 ml-2" alt="Logo" src="https://corsys.co.id/assets/img/logo-2.png" /> -->
         </a>
         <button class="brand-toggle btn btn-sm px-0 mt-5" id="kt_aside_toggle">
             <span class="svg-icon svg-icon svg-icon-xl">
@@ -24,28 +25,45 @@
             <ul class="menu-nav">
                 <?php
                 $menu = array(
-                    array('dashboard', 'fas fa-th-large', 'DASHBOARD', null, array('MK'), 0, array('dashboard')),
-                    array('document', 'fas fa-envelope', 'DOKUMEN', array(
-                        array('index/ca', 'fas fa-minus', 'CASH ADVANCE', null, array('MK'), 0, array('index/ca', 'form/ca')),
-                        array('index/pp', 'fas fa-minus', 'PAYMENT REQUEST', null, array('MK'), 0, array('index/pp', 'form/pp')),
-                        array('index/pc', 'fas fa-minus', 'REIMBURSEMENT', null, array('MK'), 0, array('index/pc', 'form/pc')),
-                        array('index/all', 'fas fa-minus', 'SEMUA DOKUMEN', null, array('MK'), 0, array('index/all', 'form/all'))
-                    ), array('MK'), 0, array('document')),
+                    array('dashboard', 'fas fa-th-large', 'DASHBOARD', null, array('MK', 'AP', 'AD'), 0, array('dashboard')));
+                print_menu($menu, $url, $_SESSION['user']['role']);
+                ?>
+
+                <li class="menu-section ">
+                    <h4 class="menu-text">DOKUMEN SURAT</h4>
+                </li>
+
+                <?php
+                $menu = array(
+                    // array('document', 'fas fa-envelope', 'DOKUMEN', array(
+                    array('document/index/ca', 'fas fa-envelope', 'CASH ADVANCE', null, array('MK', 'AP'), 
+                    count($this->mod_document->get_document("%", 'ca', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")), array('document/index/ca', 'document/form/ca')),
+                    
+                    array('document/index/pp', 'fas fa-envelope', 'PAYMENT REQUEST', null, array('MK', 'AP'), 
+                    count($this->mod_document->get_document("%", 'pp', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")), array('document/index/pp', 'document/form/pp')),
+                    
+                    array('document/index/pc', 'fas fa-envelope', 'REIMBURSEMENT', null, array('MK', 'AP'), 
+                    count($this->mod_document->get_document("%", 'pc', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")), array('document/index/pc', 'document/form/pc')),
+                    
+                    array('document/index/all', 'fas fa-envelope', 'SEMUA DOKUMEN', null, array('MK', 'AP'), 
+                    count($this->mod_document->get_document("%", 'all', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")), array('document/index/all', 'document/form/all')),
+                    // ), array('MK', 'AP'), 0, array('document')),
                 );
-                print_menu($menu, $url, 'MK');
+                print_menu($menu, $url, $_SESSION['user']['role']);
                 ?>
                 <li class="menu-section ">
                     <h4 class="menu-text">DATA MASTER</h4>
-                    <i class="menu-icon ki ki-bold-more-hor icon-md"></i>
                 </li>
                 <?php
                 $menu = array(
-                    array('company', 'fas fa-building', 'PERUSAHAAN', null, array('MK'), 0, array('company')),
-                    array('division', 'fas fa-sitemap', 'DIVISI', null, array('MK'), 0, array('division')),
-                    array('doctype', 'fas fa-file-alt', 'TIPE DOKUMEN', null, array('MK'), 0, array('doctype')),
-                    array('user', 'fas fa-user-tie', 'PENGGUNA', null, array('MK'), 0, array('user')),
+                    array('company', 'fas fa-building', 'PERUSAHAAN', null, array('AD'), 0, array('company')),
+                    array('division', 'fas fa-sitemap', 'DIVISI', null, array('AD'), 0, array('division')),
+                    array('doctype', 'fas fa-file-alt', 'TIPE DOKUMEN', null, array('AD'), 0, array('doctype')),
+                    array('docstatus', 'fas fa-file-alt', 'STATUS DOKUMEN', null, array('AD'), 0, array('docstatus')),
+                    array('user', 'fas fa-user-tie', 'PENGGUNA', null, array('AD'), 0, array('user')),
+                    //array('user/form/' . $_SESSION['user']['id'], 'fas fa-user', 'PROFIL', null, array('MK', 'AP', 'AD'), 0, array('user/form/' . $_SESSION['user']['id'])),
                 );
-                print_menu($menu, $url, 'MK');
+                print_menu($menu, $url, $_SESSION['user']['role']);
                 ?>
                 <br>
                 <li class="m-item menu-item" aria-haspopup="true">

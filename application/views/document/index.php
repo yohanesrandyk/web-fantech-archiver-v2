@@ -47,10 +47,12 @@
                     </ul>
                 </div>
             </div>
-            <a href="<?= base_url() ?>document/form/<?= $type ?>/0" class="btn btn-white text-danger font-weight-bolder ml-2">
-                <i class="la la-plus text-danger"></i>
-                Tambah Data
-            </a>
+            <?php //if ($_SESSION['user']['role'] == 'MK') { ?>
+                <a href="<?= base_url() ?>document/form/<?= $type ?>/0" class="btn btn-white text-danger font-weight-bolder ml-2">
+                    <i class="la la-plus text-danger"></i>
+                    Tambah Data
+                </a>
+            <?php //} ?>
         </div>
     </div>
 </div>
@@ -112,7 +114,7 @@
             <tbody>
                 <?php
                 $no = 1;
-                foreach ($data as $row) {
+                foreach ($documents as $row) {
                 ?>
                     <tr>
                         <td><?= $no++ ?></td>
@@ -136,10 +138,9 @@
                             <td><?= $row['user_create'] ?></td>
                             <td><?= custom_date_format($row['release_date'], 'd/m/Y') ?></td>
                         <?php } ?>
-                        <td><span class="label label-<?= $row['status'] == 'A' ? 'success' : ($row['status'] == 'P' ? 'primary' : 'danger') ?> label-inline font-weight-lighter mr-2"><?= $row['status'] == 'A' ? 'APPROVED' : ($row['status'] == 'P' ? 'PENDING' : 'REJECT') ?></span></td>
+                        <td><span class="label label-<?= substr($row['status'], 0, 1) == 'A' ? 'success' : (substr($row['status'], 0, 1) == 'P' ? 'primary' : 'danger') ?> label-inline font-weight-lighter mr-2"><?= $row['docstatus_name'] ?></span></td>
                         <td>
-                            <a href="<?= base_url() ?>document/form/<?= $type ?>/<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-pencil"></i></a>
-                            <a href="<?= base_url() ?>document/delete/<?= $type ?>/<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-trash"></i></a>
+                            <a href="<?= base_url() ?>document/form/<?= $type ?>/<?= $row['id'] ?>" class="btn btn-danger btn-sm"><i class="la la-file"></i> REVIEW</a>
                         </td>
                     </tr>
                 <?php } ?>

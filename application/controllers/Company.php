@@ -10,18 +10,19 @@ class Company extends CI_Controller
     {
         parent::__construct();
         date_default_timezone_set('Asia/Jakarta');
-        $this->load->model('mod_company');
     }
 
     public function index()
     {
         $data['content'] = "company/index";
         $data['title'] = "PERUSAHAAN";
+        $data['companies'] = $this->mod_company->get_company();
         $this->load->view('layout', $data);
     }
 
-    public function form()
+    public function form($id = null)
     {
+        $data['company'] = $this->mod_company->get_company($id)[0] ?? [];
         $data['content'] = "company/form";
         $data['title'] = "PERUSAHAAN";
         $this->load->view('layout', $data);
@@ -29,6 +30,8 @@ class Company extends CI_Controller
 
     public function store()
     {
+        $_SESSION['old'] = $_POST;
+
         $id = $this->input->post('id');
         $data = array(
             'code' => strtoupper($_POST['code']),
@@ -42,6 +45,8 @@ class Company extends CI_Controller
         } else {
             $this->mod_company->add_company($data);
         }
+
+        $_SESSION['old'] = null;
 
         return redirect('company');
     }

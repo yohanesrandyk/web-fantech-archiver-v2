@@ -18,18 +18,34 @@ class User extends CI_Controller
     {
         $data['content'] = "user/index";
         $data['title'] = "PENGGUNA";
+        $data['users'] = $this->mod_user->get_user();
         $this->load->view('layout', $data);
     }
 
-    public function form()
+    public function form($id = null)
     {
+        $data['user'] = $this->mod_user->get_user($id, '%')[0] ?? [];
+        $data['divisions'] = $this->mod_division->get_division();
         $data['content'] = "user/form";
         $data['title'] = "PENGGUNA";
         $this->load->view('layout', $data);
     }
 
+    public function delete($id)
+    {
+        $data = array(
+            'status'          => '0',
+        );
+
+        $this->mod_user->set_user($id, $data);
+
+        return redirect('user');
+    }
+
     public function store()
     {
+        $_SESSION['old'] = $_POST;
+
         $id = $this->input->post('id');
         $data = array(
             'username'      => $_POST['username'],
@@ -38,6 +54,7 @@ class User extends CI_Controller
             'division_id'   => $_POST['division_id'],
             'email'         => $_POST['email'],
             'role'          => $_POST['role'],
+            'status'        => 1
         );
 
         if ($id) {
@@ -46,12 +63,8 @@ class User extends CI_Controller
             $this->mod_user->add_user($data);
         }
 
-        return redirect('user');
-    }
+        $_SESSION['old'] = null;
 
-    public function delete($id)
-    {
-        $this->mod_user->remove_user($id);
         return redirect('user');
     }
 }

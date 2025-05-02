@@ -11,8 +11,8 @@ header("X-Frame-Options: DENY");
 
 <head>
     <meta charset="utf-8" />
-    <title>Aplikasi inventaris surat menyurat - ArcHiver v.2.0</title>
-    <meta name="description" content="" />
+    <title>ArcHiver</title>
+    <meta name="description" content="Aplikasi pengelolaan dokumen dan approval yang dirancang untuk menyederhanakan proses kerja Anda. Dengan fitur penyimpanan aman, pengaturan izin akses, dan alur persetujuan yang efisien, Archiver membantu tim Anda bekerja lebih produktif dan terorganisir. Temukan solusi manajemen dokumen yang canggih dan user-friendly bersama Archiver." />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" />
 
@@ -106,9 +106,13 @@ header("X-Frame-Options: DENY");
             background: transparent;
         }
 
+        div#loading-image {
+            background: rgba(255, 255, 255, 1.0) url('https://fantech.id/wp-content/uploads/2023/06/Fantech-Indonesia-2048x360.png') no-repeat 50% 50%;
+            background-size: contain;
+        }
+
         div#loading {
-            background: rgba(255, 255, 255, 1.0) url('<?= base_url() . 'assets/images/red-cube.gif' ?>') no-repeat 50% 50%;
-            /* background: white; */
+            background: white;
             width: 100%;
             height: 100%;
             position: fixed;
@@ -163,6 +167,25 @@ header("X-Frame-Options: DENY");
             align-items: center;
             height: 200px;
         }
+
+        .updown {
+            animation: updownanim 1s linear infinite;
+            position: absolute;
+            /* left: 0; */
+            /* bottom: 0; */
+        }
+
+        @keyframes updownanim {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
     </style>
 </head>
 
@@ -196,6 +219,7 @@ header("X-Frame-Options: DENY");
                                 <input class="form-control form-control-solid h-auto py-5 px-6" type="password" placeholder="Password" name="password" autocomplete="off">
                                 <div class="fv-plugins-message-container"></div>
                             </div>
+                            <input type="hidden" id="fcm_token" name="fcm_token">
                             <div class="form-group d-flex flex-wrap justify-content-between align-items-center">
                                 <input type="submit" class="btn btn-danger font-weight-bold px-9 py-4 my-3" value="Sign In">
                             </div>
@@ -209,7 +233,10 @@ header("X-Frame-Options: DENY");
         </div>
     </div>
     <div id="loading" style="display: none;">
+        <div id="loading-image" class="w-25 h-100 updown">
+        </div>
     </div>
+    <?php $this->view('firebase') ?>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.0/typed.min.js"></script>
     <script>

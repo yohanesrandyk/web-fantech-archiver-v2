@@ -1,4 +1,4 @@
-<form action="<?= base_url() ?>division/store" method="POST" enctype="multipart/form-data">
+<form action="<?= base_url() ?>division/store" method="POST" enctype="multipart/form-division">
     <div class="card card-custom bg-danger mb-5">
         <div class="card-header flex-wrap">
             <div class="card-title">
@@ -23,12 +23,6 @@
 
     <?php show_confirm_modal('form') ?>
 
-    <?php
-    if (isset($_GET['id'])) {
-        $data = $this->mod_division->find_division_by_id($_GET['id'])[0];
-    }
-    ?>
-
     <div class="card card-custom">
         <div class="card-header flex-wrap">
             <div class="card-title">
@@ -37,13 +31,13 @@
         </div>
         <div class="card-body">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
-            <input type="hidden" name="id" value="<?= $data['id'] ?? '' ?>">
+            <input type="hidden" name="id" value="<?= $division['id'] ?? '' ?>">
             <div class="row">
                 <div class="col-lg-4">
-                    <?php form_input(label: 'Kode Divisi', name: 'code', value: $data['code'] ?? '') ?>
+                    <?php form_input(label: 'Kode Divisi', name: 'code', value: $division['code'] ?? '') ?>
                 </div>
                 <div class="col-lg-8">
-                    <?php form_input(label: 'Nama Divisi', name: 'name', value: $data['name'] ?? '') ?>
+                    <?php form_input(label: 'Nama Divisi', name: 'name', value: $division['name'] ?? '') ?>
                 </div>
             </div>
         </div>

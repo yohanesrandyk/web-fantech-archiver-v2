@@ -27,8 +27,14 @@ class Login extends CI_Controller
 			$_SESION['errmsg'] = 'Perhatian! Username dan password tidak dapat ditemukan.';
 			return redirect('login');
 		}
-		$_SESSION['user']['username'] = $user[0]['username'];
-		$_SESSION['user']['fullname'] = $user[0]['fullname'];
+		$_SESSION['user'] = $this->mod_user->get_user($user[0]['id'])[0];
+		$_SESSION['company_id'] = "1";
+		$_SESSION['company_name'] = $this->mod_company->get_company($_SESSION['company_id'])[0]['name'];
+		
+		
+		$data = array('fcm_token' => $_POST['fcm_token']);
+		$this->mod_user->set_user($user[0]['id'], $data);
+		
 		header('location:' . base_url() . 'dashboard');
 	}
 

@@ -9,14 +9,9 @@ class Mod_division extends CI_Model
         parent::__construct();
     }
 
-    public function get_division()
+    public function get_division($id = "%")
     {
-        return $this->db->query("SELECT * FROM division")->result_array();
-    }
-
-    public function find_division_by_id($id)
-    {
-        return $this->db->query("SELECT * FROM division WHERE id = ?", array($id))->result_array();
+        return $this->db->query("SELECT * FROM division WHERE id LIKE ?", array($id))->result_array();
     }
     public function add_division($data)
     {

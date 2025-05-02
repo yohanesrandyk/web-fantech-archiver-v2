@@ -161,21 +161,24 @@ function get_array_options($array, $id, $label_array)
 <?php
 function form_input($label, $name, $value, $type = 'text', $disabled = null, $maxlength = null, $func = null, $required = true, $form = true, $accept = "")
 {
+    $value = (isset($_SESSION['old'][$name]) ? (!is_array($_SESSION['old'][$name]) ? $_SESSION['old'][$name] : null) : null) ?? $value ?? '';
 ?>
     <div class="<?= $form ? 'form-group' : '' ?>">
         <?php if (isset($label)) { ?>
             <label class="font-weight-bold"><?= $label .= $required ? ' <span class="text-danger">*</span>' : ''; ?></label>
         <?php } ?>
         <input
-            class="form-control <?= $disabled ? 'form-control-solid' : '' ?> <?= preg_replace("/[^a-zA-Z0-9]/", '', $name) ?> <?= $type == 'file' ? 'd-none' : '' ?>"
+            class="form-control <?= $disabled ? 'form-control-solid' : '' ?> <?= preg_replace("/[^a-zA-Z0-9]/", '', $name) ?> 
+            <?= $type == 'file' ? 'd-none' : '' ?>"
             <?= $maxlength ? 'maxlength="' . $maxlength . '"' : '' ?>
             type="<?= $type ?>"
             name="<?= $name ?>"
+            id="<?= $name ?>"
             value="<?= $value ?>"
             <?= $disabled ? 'readonly' : '' ?>
             onkeyup="<?= $func ?>"
             onchange="<?= $func ?>"
-            accept="<? $accept ?>"
+            accept="<?= $accept ?>"
             <?= $required ? 'required' : '' ?> />
         <img src onerror="<?= str_contains($func ?? "", "setCurrency") ? "setCurrency($(this).closest('div').find('input'))"  : $func ?>" class="d-none">
     </div>
@@ -184,15 +187,24 @@ function form_input($label, $name, $value, $type = 'text', $disabled = null, $ma
 ?>
 
 <?php
-function form_select($label, $options, $name, $value = null, $func = null, $disabled = null, $required = true)
+function form_select($label, $options, $name, $value = null, $func = null, $disabled = null, $required = true, $multiple = false)
 {
+    $value = (isset($_SESSION['old'][$name]) ? (!is_array($_SESSION['old'][$name]) ? $_SESSION['old'][$name] : null) : null) ?? $value ?? '';
 ?>
     <div class=" form-group">
         <?php if (isset($label)) { ?>
             <label class="font-weight-bold"><?= $label . ($required ? ' <span class="text-danger">*</span>' : '') ?></label>
         <?php } ?>
-        <img src onerror="initSelectPicker(this)" class="d-none">
-        <select class="form-control <?= $disabled ? 'form-control-solid' : '' ?>" data-size="5" data-live-search="true" name="<?= $name ?>" onchange="<?= $func ?>" <?= $disabled ? 'disabled' : '' ?> <?= $required ? 'required' : '' ?>>
+        <select
+            class="form-control <?= $disabled ? 'form-control-solid' : '' ?>"
+            <?= $multiple ? 'multiple="multiple"' : '' ?>
+            data-size="5"
+            data-live-search="true"
+            name="<?= $name ?>"
+            id="<?= $name ?>"
+            onchange="<?= $func ?>"
+            <?= $disabled ? 'disabled' : '' ?>
+            <?= $required ? 'required' : '' ?>>
             <option value="">Pilih <?= $label ?></option>
             <?php
             if ($options == null) $options = array();
@@ -208,16 +220,33 @@ function form_select($label, $options, $name, $value = null, $func = null, $disa
         <?php
         }
         ?>
+        <?php
+        if ($multiple) {
+            $uuid = uniqid();
+        ?>
+            <script>
+                function initMultiSelectPicker<?= $uuid ?>(e) {
+                    $(e).closest("div").find("select").selectpicker('val', "<?= $value ?? '' ?>".split(","));
+                    $(e).closest("div").find("select").selectpicker('refresh');
+                };
+            </script>
+            <img src onerror="initMultiSelectPicker<?= $uuid ?>(this)" class="d-none">
+        <?php } else {
+        ?>
+            <img src onerror="initSelectPicker(this)" class="d-none">
+        <?php
+        } ?>
     </div>
 <?php
 }
 ?>
 
 <?php
-function form_textarea($label, $name, $value, $rows = 4, $disabled = null, $maxlength = null, $required = true)
+function form_textarea($label, $name, $value, $rows = 4, $form = true, $disabled = null, $maxlength = null, $required = true)
 {
+    $value = (isset($_SESSION['old'][$name]) ? (!is_array($_SESSION['old'][$name]) ? $_SESSION['old'][$name] : null) : null) ?? $value ?? '';
 ?>
-    <div class="form-group">
+    <div class="<?= $form ? 'form-group' : '' ?>">
         <?php if (isset($label)) { ?>
             <labe class="font-weight-bold"><?= $label .= $required ? ' <span class="text-danger">*</span>' : ''; ?></label>
             <?php } ?>
@@ -247,7 +276,7 @@ function table_history($data)
                 <tr>
                     <td><?= $no++ ?></td>
                     <td><?= $row['user_update'] ?></td>
-                    <td><span class="label label-<?= $row['status_update'] == 'A' ? 'success' : ($row['status_update'] == 'P' ? 'primary' : 'danger') ?> label-inline font-weight-lighter mr-2"><?= $row['status_update'] == 'A' ? 'APPROVED' : ($row['status_update'] == 'P' ? 'PENDING' : 'REJECT') ?></span></td>
+                    <td><span class="label label-<?= substr($row['status_update'], 0, 1) == 'A' ? 'success' : (substr($row['status_update'], 0, 1) == 'P' ? 'primary' : 'danger') ?> label-inline font-weight-lighter mr-2"><?= $row['name'] ?></span></td>
                     <td><?= $row['note'] ?></td>
                     <td><?= $row['update_date'] ?></td>
                 </tr>
@@ -259,6 +288,33 @@ function table_history($data)
             $("#table-history").DataTable();
         });
     </script>
+<?php
+}
+?>
+
+<?php
+function show_approve_modal($id)
+{
+?>
+    <div class="modal fade" id="modal-approve" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdrop" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">APPROVAL</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i aria-hidden="true" class="ki ki-close"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <?php form_textarea(label: 'Catatan', rows: 3, name: 'note', value: $document['note'] ?? '', required: false) ?>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" id="btn-fake-submit-<?= $id ?>">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
 <?php
 }
 ?>
@@ -331,36 +387,41 @@ function show_confirm_modal($id)
 }
 ?>
 
-<?php
-if (isset($_SESSION['errmsg'])) {
-?>
-    <div class="modal fade show active" id="modal-errmsg" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdrop" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">KESALAHAN</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <i aria-hidden="true" class="ki ki-close"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <?= $_SESSION['errmsg'] ?>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
-                </div>
+
+<div class="modal fade show active" id="modal-errmsg" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdrop" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">KESALAHAN</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i aria-hidden="true" class="ki ki-close"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="text-errmsg">
+                <?= $_SESSION['errmsg'] ?? "" ?>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
-    <script>
+</div>
+<script>
+    function show_errmsg_modal() {
+        $("#modal-errmsg").modal();
+    }
+    <?php
+    if (isset($_SESSION['errmsg'])) {
+    ?>
         $(document).ready(function() {
-            $("#modal-errmsg").modal();
+            show_errmsg_modal();
         });
-    </script>
-<?php
-    $_SESSION['errmsg'] = null;
-}
-?>
+    <?php
+        $_SESSION['errmsg'] = null;
+    }
+    ?>
+</script>
+
 
 <script>
     function getSelectValue(e) {

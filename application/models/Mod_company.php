@@ -9,14 +9,9 @@ class Mod_company extends CI_Model
         parent::__construct();
     }
 
-    public function get_company()
+    public function get_company($id = "%")
     {
-        return $this->db->query("SELECT * FROM company")->result_array();
-    }
-
-    public function find_company_by_id($id)
-    {
-        return $this->db->query("SELECT * FROM company WHERE id = ?", array($id))->result_array();
+        return $this->db->query("SELECT * FROM company WHERE id LIKE ?", array($id))->result_array();
     }
 
     public function add_company($data)

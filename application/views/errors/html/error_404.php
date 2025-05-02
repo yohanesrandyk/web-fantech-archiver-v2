@@ -74,6 +74,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
 </html>
 
 <?php
-// $_SESSION['errmsg'] = $message;
-// return redirect($_SERVER['HTTP_REFERER'] ?? base_url());
+$_SESSION['errmsg'] = $message;
+return redirect($_SERVER['HTTP_REFERER'] ?? base_url());
 ?>

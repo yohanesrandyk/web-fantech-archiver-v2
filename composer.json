@@ -2,6 +2,17 @@
     "require": {
         "phpoffice/phpspreadsheet": "^1.29",
         "phpoffice/phpword": "^1.2",
-        "phpmailer/phpmailer": "^6.9"
+        "phpmailer/phpmailer": "^6.9",
+        "tecnickcom/tcpdf": "^6.8",
+        "ncjoes/office-converter": "^1.0",
+        "cloudconvert/cloudconvert-php": "^3.4",
+        "guzzlehttp/guzzle": "^7.9",
+        "dompdf/dompdf": "^3.0",
+        "google/apiclient": "^2.18"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
     }
 }

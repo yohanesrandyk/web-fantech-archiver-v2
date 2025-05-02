@@ -76,7 +76,7 @@
             <tbody>
                 <?php
                 $no = 1;
-                foreach ($this->mod_company->get_company() as $row) {
+                foreach ($companies as $row) {
                 ?>
                     <tr>
                         <td><?= $no++ ?></td>
@@ -84,8 +84,8 @@
                         <td><?= $row['name'] ?></td>
                         <td><?= $row['phone'] ?></td>
                         <td>
-                            <a href="<?= base_url() ?>company/form?id=<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-pencil"></i></a>
-                            <a href="<?= base_url() ?>company/delete?id=<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-trash"></i></a>
+                            <a href="<?= base_url() ?>company/form/<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-pencil"></i></a>
+                            <a href="<?= base_url() ?>company/delete/<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-trash"></i></a>
                         </td>
                     </tr>
                 <?php } ?>

@@ -81,8 +81,8 @@
                         <td><?= $row['code'] ?></td>
                         <td><?= $row['name'] ?></td>
                         <td>
-                            <a href="<?= base_url() ?>division/form?id=<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-pencil"></i></a>
-                            <a href="<?= base_url() ?>division/delete?id=<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-trash"></i></a>
+                            <a href="<?= base_url() ?>division/form/<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-pencil"></i></a>
+                            <a href="<?= base_url() ?>division/delete/<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-trash"></i></a>
                         </td>
                     </tr>
                 <?php } ?>

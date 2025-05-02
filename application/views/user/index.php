@@ -63,7 +63,7 @@
                     <th>USERNAME</th>
                     <th>FULLNAME</th>
                     <th>DIVISI</th>
-                    <th>EMAIL</th>
+                    <th>ROLE</th>
                     <th></th>
                 </tr>
                 <tr>
@@ -79,16 +79,17 @@
                 <?php
                 $no = 1;
                 foreach ($this->mod_user->get_user() as $row) {
+                    if($row['status'] == 0) continue;
                 ?>
                     <tr>
                         <td><?= $no++ ?></td>
                         <td><?= $row['username'] ?></td>
                         <td><?= $row['fullname'] ?></td>
                         <td><?= $row['division_name'] ?></td>
-                        <td><?= $row['email'] ?></td>
+                        <td><?= $row['role'] ?></td>
                         <td>
-                            <a href="<?= base_url() ?>user/form?id=<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-pencil"></i></a>
-                            <a href="<?= base_url() ?>user/delete?id=<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-trash"></i></a>
+                            <a href="<?= base_url() ?>user/form/<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-pencil"></i></a>
+                            <a href="<?= base_url() ?>user/delete/<?= $row['id'] ?>" class="btn btn-danger btn-icon btn-sm"><i class="la la-trash"></i></a>
                         </td>
                     </tr>
                 <?php } ?>

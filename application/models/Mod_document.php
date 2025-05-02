@@ -9,19 +9,24 @@ class Mod_document extends CI_Model
         parent::__construct();
     }
 
-    public function get_document($id, $type)
+    public function get_document($id, $type, $division_id = "%", $company_id = "%")
     {
-        return $this->db->query("SELECT document_2.*, document_all.*, company.code as company_code, company.name AS company_name, from_division.name AS from_division, to_division.name AS to_division, document_type.name AS document_type_name, document_all.id id, document_2.id id_2
+        return $this->db->query("SELECT docstatus.*, document_2.*, document_all.*, docstatus.name as docstatus_name, company.code as company_code, company.name AS company_name, from_division.name AS from_division, to_division.name AS to_division, doctype.name AS doctype_name, document_all.id id, document_2.id id_2
         FROM document_all
+        INNER JOIN docstatus ON docstatus.code = document_all.status
         INNER JOIN document_$type document_2 ON document_2.document_id = document_all.id
         INNER JOIN division from_division ON from_division.id = document_all.from_division_id
-        INNER JOIN division to_division ON to_division.id = document_all.to_division_id
+        INNER JOIN division to_division ON to_division.id = docstatus.to_division_id
         INNER JOIN company ON company.id = document_all.company_id
-        INNER JOIN document_type ON document_type.id = document_all.document_type_id
-        WHERE document_all.id LIKE ? AND document_all.status <> 'D'", array($id))->result_array();
+        INNER JOIN doctype ON doctype.id = document_all.doctype_id
+        WHERE document_all.id LIKE ? AND document_all.status <> 'D'
+        AND (document_all.from_division_id LIKE ?
+            OR docstatus.to_division_id LIKE ?
+            OR docstatus.cc_division_ids LIKE ?)
+        AND document_all.company_id LIKE ?", array($id, $division_id, $division_id, $division_id, $company_id))->result_array();
     }
 
-    public function find_document_number($document_number)
+    public function get_document_number($document_number)
     {
         return $this->db->query("SELECT id, RIGHT(CONCAT('00000',  COALESCE(COUNT(*), 0) + 1), 5) AS last_document_number FROM document_all WHERE document_number LIKE ?", array($document_number))->result_array();
     }

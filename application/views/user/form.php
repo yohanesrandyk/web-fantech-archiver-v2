@@ -1,4 +1,4 @@
-<form action="<?= base_url() ?>user/store" method="POST" enctype="multipart/form-data">
+<form action="<?= base_url() ?>user/store" method="POST" enctype="multipart/form-user">
     <div class="card card-custom bg-danger mb-5">
         <div class="card-header flex-wrap">
             <div class="card-title">
@@ -13,7 +13,7 @@
                         <i class="la la-save"></i>
                     </span>Simpan
                 </button>
-                <a href="<?= base_url() ?>petugas" class="btn btn-white text-danger font-weight-bolder ml-2">
+                <a href="<?= base_url() ?>user" class="btn btn-white text-danger font-weight-bolder ml-2">
                     <i class="la la-arrow-left text-danger"></i>
                     Kembali
                 </a>
@@ -23,13 +23,6 @@
 
     <?php show_confirm_modal('form') ?>
 
-
-    <?php
-    if (isset($_GET['id'])) {
-        $data = $this->mod_user->find_user_by_id($_GET['id'])[0];
-    }
-    ?>
-
     <div class="card card-custom">
         <div class="card-header flex-wrap">
             <div class="card-title">
@@ -38,14 +31,14 @@
         </div>
         <div class="card-body">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
-            <input type="hidden" name="id" value="<?= $data['id'] ?? '' ?>">
-            <?php form_input(label: 'Nama', name: 'fullname', value: $data['fullname'] ?? '') ?>
+            <input type="hidden" name="id" value="<?= $user['id'] ?? '' ?>">
+            <?php form_input(label: 'Nama', name: 'fullname', value: $user['fullname'] ?? '') ?>
             <div class="row mb-5">
                 <div class="col-lg-6">
-                    <?php form_input(label: 'Username', name: 'username', value: $data['username'] ?? '') ?>
+                    <?php form_input(label: 'Username', name: 'username', value: $user['username'] ?? '') ?>
                 </div>
                 <div class="col-lg-6">
-                    <?php form_input(label: 'Password', name: 'password', value: $data['password'] ?? '') ?>
+                    <?php form_input(label: 'Password', name: 'password', value: $user['password'] ?? '') ?>
                 </div>
             </div>
             <div class="row mb-5">
@@ -53,21 +46,21 @@
                     <?php form_select(
                         label: 'Divisi',
                         name: 'division_id',
-                        options: get_array_options($this->mod_division->get_division(), 'id', array('name', ' [', 'code', ']')),
-                        value: $data['division_id'] ?? ''
+                        options: get_array_options($divisions, 'id', array('name', ' [', 'code', ']')),
+                        value: $user['division_id'] ?? ''
                     ) ?>
                 </div>
                 <div class="col-lg-6">
                     <?php form_select(
                         label: 'Role',
                         name: 'role',
-                        options: array(array('MK', 'Maker [MK]'), array('AP', 'Approver [AP]'), array('DR', 'Direktur [DR]'), array('AC', 'Akunting [AC]')),
-                        value: $data['role'] ?? ''
+                        options: array(array('MK', 'MAKER [MK]'), array('AP', 'APPROVER [AP]'), array('AD', 'ADMIN [AD]')),
+                        value: $user['role'] ?? ''
                     ) ?>
                 </div>
             </div>
 
-            <?php form_input(label: 'Email', name: 'email', value: $data['email'] ?? '') ?>
+            <?php form_input(label: 'Email', type:'email', name: 'email', value: $user['email'] ?? '') ?>
         </div>
     </div>
 </form>

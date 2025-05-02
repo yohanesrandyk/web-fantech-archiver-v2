@@ -17,11 +17,13 @@ class Division extends CI_Controller
     {
         $data['content'] = "division/index";
         $data['title'] = "DIVISI";
+        $data['divisions'] = $this->mod_division->get_division();
         $this->load->view('layout', $data);
     }
 
-    public function form()
+    public function form($id = null)
     {
+        $data['division'] = $this->mod_division->get_division($id)[0] ?? [];
         $data['content'] = "division/form";
         $data['title'] = "DIVISI";
         $this->load->view('layout', $data);
@@ -29,6 +31,8 @@ class Division extends CI_Controller
 
     public function store()
     {
+        $_SESSION['old'] = $_POST;
+
         $id = $this->input->post('id');
         $data = array(
             'code' => strtoupper($_POST['code']),
@@ -40,6 +44,8 @@ class Division extends CI_Controller
         } else {
             $this->mod_division->add_division($data);
         }
+
+        $_SESSION['old'] = null;
 
         return redirect('division');
     }

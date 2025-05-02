@@ -1,4 +1,4 @@
-<form action="<?= base_url() ?>company/store" method="POST" enctype="multipart/form-data">
+<form action="<?= base_url() ?>company/store" method="POST" enctype="multipart/form-company">
     <div class="card card-custom bg-danger text-white mb-5">
         <div class="card-header flex-wrap">
             <div class="card-title">
@@ -23,31 +23,25 @@
 
     <?php show_confirm_modal('form') ?>
 
-    <?php
-    if (isset($_GET['id'])) {
-        $data = $this->mod_company->find_company_by_id($_GET['id'])[0];
-    }
-    ?>
-
     <div class="card card-custom">
         <div class="card-header flex-wrap">
             <div class="card-title">
-                <span class="font-weight-bolder">Form Perusahaan</span>
+                <span class="font-weight-bolder">FORM <?= $title ?></span>
             </div>
         </div>
         <div class="card-body">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
-            <input type="hidden" name="id" value="<?= $data['id'] ?? '' ?>">
+            <input type="hidden" name="id" value="<?= $company['id'] ?? '' ?>">
             <div class="row">
                 <div class="col-lg-3">
-                    <?php form_input(label: 'Kode Perusahaan', name: 'code', value: $data['code'] ?? '') ?>
+                    <?php form_input(label: 'Kode Perusahaan', name: 'code', value: $company['code'] ?? '') ?>
                 </div>
                 <div class="col-lg-8">
-                    <?php form_input(label: 'Nama Perusahaan', name: 'name', value: $data['name'] ?? '') ?>
+                    <?php form_input(label: 'Nama Perusahaan', name: 'name', value: $company['name'] ?? '') ?>
                 </div>
             </div>
-            <?php form_input(label: 'No. Telpon', name: 'phone', value: $data['phone'] ?? '') ?>
-            <?php form_textarea(label: 'Alamat', rows: 6, name: 'address', value: $data['address'] ?? '') ?>
+            <?php form_input(label: 'No. Telpon', name: 'phone', value: $company['phone'] ?? '', required: false) ?>
+            <?php form_textarea(label: 'Alamat', rows: 6, name: 'address', value: $company['address'] ?? '', required: false) ?>
         </div>
     </div>
 </form>
