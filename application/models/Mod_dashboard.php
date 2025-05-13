@@ -39,8 +39,8 @@ class Mod_dashboard extends CI_Model
     public function get_sum_document($type, $division_id = "%")
     {
         return $this->db->query("SELECT SUM(unit*price) total, doctype.name 
-        FROM item_document_$type 
-        INNER JOIN document_all ON document_all.id = item_document_$type.document_id
+        FROM item_document 
+        INNER JOIN document_all ON document_all.id = item_document.document_id
         INNER JOIN doctype ON doctype.id = document_all.doctype_id 
         WHERE document_all.from_division_id LIKE ?
         AND document_all.company_id = ?

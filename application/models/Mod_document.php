@@ -16,7 +16,8 @@ class Mod_document extends CI_Model
         CASE 
             WHEN document_all.from_division_id LIKE ?
             OR docstatus.to_division_id LIKE ? 
-            THEN 1 ELSE 0 END AS is_division
+            THEN 1 ELSE 0 END AS is_division,
+        IFNULL((SELECT SUM(unit * price) FROM item_document WHERE document_id = document_all.id), 0) AS transfer_amount
         FROM document_all
         INNER JOIN docstatus ON docstatus.code = document_all.status
         INNER JOIN document_$type document_2 ON document_2.document_id = document_all.id

@@ -274,8 +274,10 @@ if (
                                                 <button type="button" class="btn btn-success <?= !($iscanapprove && $isfinance) ? 'disabled' : '' ?>" <?= !($iscanapprove && $isfinance) ? 'disabled' : '' ?> onclick="$(this).closest('.dfile').find('.file_f').click()"><i class="la la-upload"></i> UPLOAD BUKTI TRANSFER</button>
                                             </td>
                                             <td>
-                                                <?php if (isset($row['file'])) { ?>
+                                                <?php if (isset($row['file']) && !empty($row['file'])) { ?>
                                                     <a class="btn btn-primary" href="<?= base_url() . $row['file'] ?>" target="_blank"><i class="la la-image"></i> VIEW</a>
+                                                <?php } else { ?>
+                                                    <a class="btn btn-secondary disabled" disabled href="#"><i class="la la-image"></i> NO FILE</a>
                                                 <?php } ?>
                                             </td>
                                         </tr>
@@ -329,8 +331,10 @@ if (
                                                             <button type="button" class="btn btn-primary <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?>" <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?> onclick="$(this).closest('.td').find('.file').click()"><i class="la la-paperclip"></i> UPLOAD</button>
                                                         </td>
                                                         <td>
-                                                            <?php if (isset($row['file'])) { ?>
+                                                            <?php if (isset($row['file']) && !empty($row['file'])) { ?>
                                                                 <a class="btn btn-primary" href="<?= base_url() . $row['file'] ?>" target="_blank"><i class="la la-image"></i> SHOW</a>
+                                                            <?php } else { ?>
+                                                                <a class="btn btn-secondary disabled" disabled href="#"><i class="la la-image"></i> NO FILE</a>
                                                             <?php } ?>
                                                         </td>
                                                     </tr>
@@ -412,6 +416,7 @@ if (
                             if (
                                 substr($row['code'], 0, 1) != 'N'
                                 && substr($row['code'], 0, 1) != 'P'
+                                && substr($row['code'], 0, 1) != 'R'
                                 && $row['approve_code'] != ''
                                 && !str_contains($row['name'], '_HEAD')
                             ) {
@@ -548,15 +553,31 @@ if (
     }
 
     function save_approve() {
-        <?php if ($isnew) { ?>
+        <?php
+        if ($isnew) {
+        ?>
             $('#status option').each(function() {
                 if ($(this).val().substring(0, 1) == "P")
                     $("#status").val($(this).val()).change();
             });
-        <?php } else { ?>
-            $("#status").val("<?= $approvecode ?>").change();
+            <?php
+        } else {
+            if ($iscancomplete && $type == "ca") {
+            ?>
+                var sum_diff = $("#sum-diff").html();
+                sum_diff = sum_diff.replace(/[^0-9-]/g, '');
+                if (sum_diff != 0) {
+                    alert("Sisa transfer tidak boleh lebih dari 0, silahkan ajukan transfer ke divisi lain.");
+                    return;
+                }
+            <?php
+            } else {
+            ?>
+                $("#status").val("<?= $approvecode ?>").change();
         <?php
-        } ?>
+            }
+        }
+        ?>
 
         show_confirm_modal_form("Data anda akan disetujui ke tahapan " + $("#status option:selected").text() + ".");
     }
