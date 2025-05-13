@@ -43,6 +43,7 @@ class Mod_dashboard extends CI_Model
         INNER JOIN document_all ON document_all.id = item_document_$type.document_id
         INNER JOIN doctype ON doctype.id = document_all.doctype_id 
         WHERE document_all.from_division_id LIKE ?
-        GROUP BY doctype.name", array($division_id))->result_array();
+        AND document_all.company_id = ?
+        GROUP BY doctype.name", array($division_id, $_SESSION['company_id']))->result_array();
     }
 }

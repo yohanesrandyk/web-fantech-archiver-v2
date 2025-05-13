@@ -207,3 +207,42 @@ function crop_image($imgSrc)
     header('Content-type: image/jpeg');
     return imagejpeg($thumb);
 }
+
+
+function get_array_options($array, $id, $label_array)
+{
+    $options = array();
+    foreach ($array as $row) {
+        $label = '';
+        foreach ($label_array as $row_x) {
+            $label .= $row[$row_x] ?? $row_x;
+        }
+        $options[] = array($row[$id], $label);
+    }
+    return $options;
+}
+
+function terbilang($number)
+{
+    $words = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+
+    if ($number < 12) {
+        return $words[$number];
+    } elseif ($number < 20) {
+        return terbilang($number - 10) . " belas";
+    } elseif ($number < 100) {
+        return terbilang(intval($number / 10)) . " puluh " . terbilang($number % 10);
+    } elseif ($number < 200) {
+        return "seratus " . terbilang($number - 100);
+    } elseif ($number < 1000) {
+        return terbilang(intval($number / 100)) . " ratus " . terbilang($number % 100);
+    } elseif ($number < 2000) {
+        return "seribu " . terbilang($number - 1000);
+    } elseif ($number < 1000000) {
+        return terbilang(intval($number / 1000)) . " ribu " . terbilang($number % 1000);
+    } elseif ($number < 1000000000) {
+        return terbilang(intval($number / 1000000)) . " juta " . terbilang($number % 1000000);
+    } else {
+        return "Angka terlalu besar";
+    }
+}

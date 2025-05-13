@@ -5,7 +5,7 @@ header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
 header("X-Frame-Options: DENY");
 
 if (!isset($_SESSION['user'])) {
-    // $this->session->set_flashdata('errmsg', 'Perhatian! Harap login menggunakan username dan password Anda.');
+    $this->session->set_flashdata('errmsg', 'Perhatian! Harap login menggunakan username dan password Anda.');
     redirect('login');
 }
 ?>
@@ -177,7 +177,7 @@ if (!isset($_SESSION['user'])) {
         }
 
         div#loading-image {
-            /* background: rgba(255, 255, 255, 1.0) url('https://fantech.id/wp-content/uploads/2023/06/Fantech-Indonesia-2048x360.png') no-repeat 50% 50%; */
+            background: rgba(255, 255, 255, 1.0) url('https://fantech.id/wp-content/uploads/2023/06/Fantech-Indonesia-2048x360.png') no-repeat 50% 50%;
             background-size: contain;
         }
 

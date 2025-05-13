@@ -47,12 +47,14 @@
                     </ul>
                 </div>
             </div>
-            <?php //if ($_SESSION['user']['role'] == 'MK') { ?>
-                <a href="<?= base_url() ?>document/form/<?= $type ?>/0" class="btn btn-white text-danger font-weight-bolder ml-2">
-                    <i class="la la-plus text-danger"></i>
-                    Tambah Data
-                </a>
-            <?php //} ?>
+            <?php //if ($_SESSION['user']['role'] == 'MK') { 
+            ?>
+            <a href="<?= base_url() ?>document/form/<?= $type ?>/0" class="btn btn-white text-danger font-weight-bolder ml-2" id="btn-add">
+                <i class="la la-plus text-danger"></i>
+                Tambah Data
+            </a>
+            <?php //} 
+            ?>
         </div>
     </div>
 </div>
@@ -63,20 +65,10 @@
                 <tr>
                     <th>#</th>
                     <th>NO. DOKUMEN</th>
-                    <?php if ($type == "ca") { ?>
+                    <?php if ($type == "ca" || $type == "pc" || $type == "pp") { ?>
                         <th>PROYEK</th>
-                        <th>KLIEN</th>
                         <th>TANGGAL SURAT</th>
                         <th>NOMINAL</th>
-                    <?php } else if ($type == "pc") { ?>
-                        <th>PROYEK</th>
-                        <th>CUSTOMER</th>
-                        <th>NAMA AKUN</th>
-                    <?php } else if ($type == "pp") { ?>
-                        <th>PROYEK</th>
-                        <th>CUSTOMER</th>
-                        <th>TANGGAL BELI</th>
-                        <th>VENDOR</th>
                     <?php } else if ($type == "all") { ?>
                         <th>SUBJEK</th>
                         <th>DIVISI</th>
@@ -88,17 +80,7 @@
                 <tr>
                     <th></th>
                     <th class="searching"><input type="text" class="form-control" /></th>
-                    <?php if ($type == "ca") { ?>
-                        <th class="searching"><input type="text" class="form-control" /></th>
-                        <th class="searching"><input type="text" class="form-control" /></th>
-                        <th class="searching"><input type="text" class="form-control" /></th>
-                        <th class="searching"><input type="text" class="form-control" /></th>
-                    <?php } else if ($type == "pc") { ?>
-                        <th class="searching"><input type="text" class="form-control" /></th>
-                        <th class="searching"><input type="text" class="form-control" /></th>
-                        <th class="searching"><input type="text" class="form-control" /></th>
-                    <?php } else if ($type == "pp") { ?>
-                        <th class="searching"><input type="text" class="form-control" /></th>
+                    <?php if ($type == "ca" || $type == "pc" || $type == "pp") { ?>
                         <th class="searching"><input type="text" class="form-control" /></th>
                         <th class="searching"><input type="text" class="form-control" /></th>
                         <th class="searching"><input type="text" class="form-control" /></th>
@@ -114,25 +96,19 @@
             <tbody>
                 <?php
                 $no = 1;
+                $notdone = [];
                 foreach ($documents as $row) {
+                    if ($row['status'] != 'A' && substr($row['status'], 0, 1) != 'N' && $type == 'ca') {
+                        $notdone[] = $row['document_number'];
+                    }
                 ?>
                     <tr>
                         <td><?= $no++ ?></td>
                         <td><?= $row['document_number'] ?></td>
-                        <?php if ($type == "ca") { ?>
+                        <?php if ($type == "ca" || $type == "pc" || $type == "pp") { ?>
                             <td><?= $row['project'] ?></td>
-                            <td><?= $row['client'] ?></td>
                             <td><?= custom_date_format($row['create_date'], 'd/m/Y') ?></td>
                             <td>Rp. <?= number_format($row['transfer_amount']) ?></td>
-                        <?php } else if ($type == "pc") { ?>
-                            <td><?= $row['project'] ?></td>
-                            <td><?= $row['customer'] ?></td>
-                            <td><?= $row['account_name'] ?></td>
-                        <?php } else if ($type == "pp") { ?>
-                            <td><?= $row['project'] ?></td>
-                            <td><?= $row['customer'] ?></td>
-                            <td><?= custom_date_format($row['buy_date'], 'd/m/Y') ?></td>
-                            <td><?= $row['vendor'] ?></td>
                         <?php } else if ($type == "all") { ?>
                             <td><?= $row['subject'] ?></td>
                             <td><?= $row['user_create'] ?></td>
@@ -141,15 +117,25 @@
                         <td><span class="label label-<?= substr($row['status'], 0, 1) == 'A' ? 'success' : (substr($row['status'], 0, 1) == 'P' ? 'primary' : 'danger') ?> label-inline font-weight-lighter mr-2"><?= $row['docstatus_name'] ?></span></td>
                         <td>
                             <a href="<?= base_url() ?>document/form/<?= $type ?>/<?= $row['id'] ?>" class="btn btn-danger btn-sm"><i class="la la-file"></i> REVIEW</a>
+                            <a href="<?= base_url() ?>document/cetak/<?= $type ?>/<?= $row['id'] ?>" class="btn btn-primary btn-sm"><i class="la la-print"></i> CETAK</a>
                         </td>
                     </tr>
-                <?php } ?>
+                <?php
+                } ?>
             </tbody>
         </table>
     </div>
 </div>
 <script>
     $(document).ready(function() {
+        <?php if (count($notdone) > 1) { ?>
+            $("#btn-add").attr("href", "#");
+            $("#btn-add").click(function(e) {
+                e.preventDefault();
+                $("#text-errmsg").html("Dokumen <?= $notdone[count($notdone) - 1] ?> belum selesai, harap selesaikan dokumen terlebih dahulu.");
+                show_errmsg_modal();
+            });
+        <?php } ?>
         var table = $("#table").DataTable({
             order: [],
             ordering: true,

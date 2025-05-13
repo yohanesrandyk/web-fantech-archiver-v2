@@ -25,7 +25,8 @@
             <ul class="menu-nav">
                 <?php
                 $menu = array(
-                    array('dashboard', 'fas fa-th-large', 'DASHBOARD', null, array('MK', 'AP', 'AD'), 0, array('dashboard')));
+                    array('dashboard', 'fas fa-th-large', 'DASHBOARD', null, array('MK', 'AP', 'AD'), 0, array('dashboard'))
+                );
                 print_menu($menu, $url, $_SESSION['user']['role']);
                 ?>
 
@@ -36,17 +37,45 @@
                 <?php
                 $menu = array(
                     // array('document', 'fas fa-envelope', 'DOKUMEN', array(
-                    array('document/index/ca', 'fas fa-envelope', 'CASH ADVANCE', null, array('MK', 'AP'), 
-                    count($this->mod_document->get_document("%", 'ca', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")), array('document/index/ca', 'document/form/ca')),
-                    
-                    array('document/index/pp', 'fas fa-envelope', 'PAYMENT REQUEST', null, array('MK', 'AP'), 
-                    count($this->mod_document->get_document("%", 'pp', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")), array('document/index/pp', 'document/form/pp')),
-                    
-                    array('document/index/pc', 'fas fa-envelope', 'REIMBURSEMENT', null, array('MK', 'AP'), 
-                    count($this->mod_document->get_document("%", 'pc', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")), array('document/index/pc', 'document/form/pc')),
-                    
-                    array('document/index/all', 'fas fa-envelope', 'SEMUA DOKUMEN', null, array('MK', 'AP'), 
-                    count($this->mod_document->get_document("%", 'all', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")), array('document/index/all', 'document/form/all')),
+                    array(
+                        'document/index/ca',
+                        'fas fa-envelope',
+                        'CASH ADVANCE',
+                        null,
+                        array('MK', 'AP'),
+                        count($this->mod_document->get_document("%", 'ca', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")),
+                        array('document/index/ca', 'document/form/ca')
+                    ),
+
+                    array(
+                        'document/index/pp',
+                        'fas fa-envelope',
+                        'PAYMENT REQUEST',
+                        null,
+                        array('MK', 'AP'),
+                        count($this->mod_document->get_document("%", 'pp', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")),
+                        array('document/index/pp', 'document/form/pp')
+                    ),
+
+                    array(
+                        'document/index/pc',
+                        'fas fa-envelope',
+                        'REIMBURSEMENT',
+                        null,
+                        array('MK', 'AP'),
+                        count($this->mod_document->get_document("%", 'pc', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")),
+                        array('document/index/pc', 'document/form/pc')
+                    ),
+
+                    array(
+                        'document/index/all',
+                        'fas fa-envelope',
+                        'CORRESPONDENCE',
+                        null,
+                        array('MK', 'AP'),
+                        count($this->mod_document->get_document("%", 'all', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")),
+                        array('document/index/all', 'document/form/all')
+                    ),
                     // ), array('MK', 'AP'), 0, array('document')),
                 );
                 print_menu($menu, $url, $_SESSION['user']['role']);

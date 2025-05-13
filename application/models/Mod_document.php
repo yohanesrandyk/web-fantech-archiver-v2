@@ -11,7 +11,12 @@ class Mod_document extends CI_Model
 
     public function get_document($id, $type, $division_id = "%", $company_id = "%")
     {
-        return $this->db->query("SELECT docstatus.*, document_2.*, document_all.*, docstatus.name as docstatus_name, company.code as company_code, company.name AS company_name, from_division.name AS from_division, to_division.name AS to_division, doctype.name AS doctype_name, document_all.id id, document_2.id id_2
+        return $this->db->query(
+            "SELECT docstatus.*, document_2.*, document_all.*, docstatus.name as docstatus_name, company.code as company_code, company.name AS company_name, from_division.name AS from_division, to_division.name AS to_division, doctype.name AS doctype_name, document_all.id id, document_2.id id_2, 
+        CASE 
+            WHEN document_all.from_division_id LIKE ?
+            OR docstatus.to_division_id LIKE ? 
+            THEN 1 ELSE 0 END AS is_division
         FROM document_all
         INNER JOIN docstatus ON docstatus.code = document_all.status
         INNER JOIN document_$type document_2 ON document_2.document_id = document_all.id
@@ -22,8 +27,22 @@ class Mod_document extends CI_Model
         WHERE document_all.id LIKE ? AND document_all.status <> 'D'
         AND (document_all.from_division_id LIKE ?
             OR docstatus.to_division_id LIKE ?
-            OR docstatus.cc_division_ids LIKE ?)
-        AND document_all.company_id LIKE ?", array($id, $division_id, $division_id, $division_id, $company_id))->result_array();
+            OR document_all.id IN (SELECT document_id FROM document_history WHERE from_division_id LIKE ?))
+        AND document_all.company_id LIKE ?
+        AND (('$type' = 'all' AND doctype.type = 'A') OR ('$type' <> 'all' AND doctype.type <> 'A'))
+        AND ((LEFT(document_all.status, 1) = 'N' AND document_all.user_create_id = ?) OR LEFT(document_all.status, 1) <> 'N')
+        ORDER BY document_all.id DESC",
+            array(
+                $division_id,
+                $division_id,
+                $id,
+                $division_id,
+                $division_id,
+                $division_id,
+                $company_id,
+                $_SESSION['user']['id'],
+            )
+        )->result_array();
     }
 
     public function get_document_number($document_number)

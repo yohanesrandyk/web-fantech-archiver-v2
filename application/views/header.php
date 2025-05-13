@@ -28,11 +28,10 @@
         </div>
         <div class="topbar">
             <div class="dropdown">
+                <?php $notification = $this->mod_notification->get_notification($_SESSION['user']['division_id']); ?>
                 <div class="topbar-item" data-toggle="dropdown" data-offset="10px,0px">
                     <div class="btn btn-icon btn-clean btn-dropdown btn-lg mr-1 pulse pulse-danger">
-                        <span class="la la-bell icon-xl text-<?php
-                                                                //$isnotdone > 0 ? 'danger' : 'muted' 
-                                                                ?>"></span>
+                        <span class="la la-bell icon-xl text-<?= count($notification) > 0 ? 'danger' : 'muted' ?>"></span>
                         <span class="pulse-ring"></span>
                     </div>
                 </div>
@@ -40,13 +39,31 @@
                     <div class="d-flex flex-column pt-12 bgi-size-cover rounded-top bg-danger pb-8">
                         <h4 class="d-flex flex-center rounded-top">
                             <span class="text-white">Pemberitahuan</span>
-                            <!-- <span class="btn btn-text btn-white btn-sm font-weight-bold btn-font-md ml-2">23 new</span> -->
+                            <?= count($notification) > 0 ? '<span class="btn btn-text btn-white btn-sm font-weight-bold btn-font-md ml-2">' . count($notification) . ' new</span>' : '' ?>
                         </h4>
                     </div>
                     <div class="tab-content">
                         <div class="tab-pane active show p-8" id="topbar_notifications_notifications" role="tabpanel">
                             <div class="scroll pr-7 mr-n7" data-scroll="true" data-height="300" data-mobile-height="200">
-
+                                <?php
+                                foreach ($notification as $row) {
+                                ?>
+                                    <div class="d-flex align-items-center mb-8">
+                                        <div class="symbol symbol-40 symbol-danger mr-5">
+                                            <span class="symbol-label">
+                                                <span class="fa fa-bell icon-md text-white"></span>
+                                            </span>
+                                        </div>
+                                        <div class="d-flex flex-column">
+                                            <a href="#" class="text-dark text-hover-danger mb-1 font-size-lg font-weight-bold"><?= $row['title'] ?></a>
+                                            <span class="text-muted font-size-sm">
+                                                <?= $row['body'] ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                <?php
+                                }
+                                ?>
                             </div>
                         </div>
                     </div>

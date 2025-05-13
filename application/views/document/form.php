@@ -1,52 +1,63 @@
 <?php
+$this->view('document/custom');
+
 $isdisabled = true;
 
+$statuscode = $document['status'] ?? null;
 $approvecode = $document['approve_code'] ?? 'P';
 $rejectcode = $document['reject_code'] ?? 'P';
 $isnew = substr($approvecode, 0, 1) == 'P';
-$isinform = ($type == 'all' && ($document['type'] ?? '-') == 'A') || $type != 'all';
+$isinform = ($type == 'all' && ($document['type'] ?? 'A') == 'A') || $type != 'all';
 $iscanapprove = substr($approvecode, 0, 1) == 'A';
 $iscanapprove = $iscanapprove && ($document['approve_code'] != 'A' || ($document['approve_code'] == 'A' && ($document['user_create_id'] ?? '') != $_SESSION['user']['id']));
 $iscancomplete = $approvecode == 'A';
+$isreview = (($document["from_division_id"] ?? $_SESSION['user']['division_id']) != $_SESSION['user']['division_id']
+    && ($document["to_division_id"] ?? $_SESSION['user']['division_id']) != $_SESSION['user']['division_id']) ?? false;
+
+echo "<script>console.log('isreview', '" . $isreview . "');console.log('isinform', '" . $isinform . "');console.log('isnew', '" . $isnew . "');console.log('iscanapprove', '" . $iscanapprove . "');console.log('iscancomplete', '" . $iscancomplete . "');</script>";
 
 if (
-    $isnew && $isinform
+    $isinform && $isnew
 ) {
     $isdisabled = false;
 }
+
 ?>
 <script>
     function calculate_item(e) {
         $(document).ready(function() {
-            var unit = $(e).closest("tr").find(".unit").val().replace(/,/g, '');
-            var price = $(e).closest("tr").find(".price").val().replace(/,/g, '');
+            if ($(e).closest("tr").length > 0) {
+                var unit = $(e).closest("tr").find(".unit").val().replace(/,/g, '');
+                var price = $(e).closest("tr").find(".price").val().replace(/,/g, '');
+                $(e).closest("tr").find(".subtotal").val(unit * price);
+
+                setCurrency($(e).closest("tr").find(".unit"));
+                setCurrency($(e).closest("tr").find(".price"));
+                setCurrency($(e).closest("tr").find(".subtotal"));
+            }
+
             var transfer = $("#transfer_amount").val().replace(/,/g, '');
+            setCurrency($("#transfer_amount"));
 
-            $(e).closest("tr").find(".subtotal").val(unit * price);
-
-            setCurrency($(e).closest("tr").find(".unit"));
-            setCurrency($(e).closest("tr").find(".price"));
-            setCurrency($(e).closest("tr").find(".subtotal"));
-            setCurrency($(e).closest("tr").find(".used"));
-
-
-            if ($('.used').length) {
+            if ($('.unit').length) {
                 var total = 0;
-                var used = 0;
                 var diff = 0;
                 $('.subtotal').each(function() {
                     var total_ = parseInt($(this).val().replace(/,/g, ''));
                     if (Number.isNaN(total_)) total_ = 0;
                     total += total_;
                 });
-                $('.used').each(function() {
-                    var used_ = parseInt($(this).val().replace(/,/g, ''));
-                    if (Number.isNaN(used_)) used_ = 0;
-                    used += used_;
-                });
-                diff = transfer - used;
-                $("#sum-subtotal").text("Rp. " + formatNumber(total));
-                $("#sum-used").text("Rp. " + formatNumber(used));
+                diff = transfer - total;
+
+                if (diff > 0) {
+                    $("#mt_to_division_id").val("<?= $document['from_division_id'] ?? '0' ?>");
+                } else {
+                    $("#mt_to_division_id").val("2");
+                }
+                $("#mt_to_division_id").selectpicker('refresh');
+
+                $("#sum-subtotal").text("Rp. " + formatNumber(transfer));
+                $("#sum-used").text("Rp. " + formatNumber(total));
                 $("#sum-diff").text("Rp. " + formatNumber(diff));
                 if (diff == 0) {
                     $("#card-diff").removeClass("text-danger");
@@ -58,11 +69,13 @@ if (
                     $("#card-diff").removeClass("bg-light-success");
                     $("#card-diff").addClass("text-danger");
                     $("#card-diff").addClass("bg-light-danger");
-
                 }
-                if (diff != 0) {
-                    $("#text-errmsg").text("Total harga tdak sama dengan jumlah transfer.");
+
+                if (transfer < 500000) {
+                    $("#text-errmsg").text("Minimal pengajuan 500,000.");
                     $("#btn-save").attr("onclick", "show_errmsg_modal()");
+                } else {
+                    $("#btn-save").attr("onclick", "save_approve()");
                 }
             }
         });
@@ -71,7 +84,6 @@ if (
     function set_division(e) {
         var division = <?= json_encode($docstatus) ?>;
         var status = $(e).val();
-        // console.log(status);
         for (var i = 0; i < division.length; i++) {
             if (division[i].code == status) {
                 $("#to_division_id").val(division[i].to_division_id);
@@ -143,68 +155,95 @@ if (
                     <?php if ($type == "ca") { ?>
                         <div class="row mb-5">
                             <div class="col-lg-4">
-                                <?php form_input(label: 'Nama Proyek', name: 'project', value: $document['project'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_input(label: 'Nama Klien', name: 'client', value: $document['client'] ?? '', disabled: $isdisabled) ?>
-                                <?php //form_textarea(label: 'Catatan', rows: 3, name: 'note', value: $document['note'] ?? '', required: false) 
+                                <?php form_input(label: 'Tujuan', name: 'project', value: $document['project'] ?? '', disabled: $isdisabled)
                                 ?>
                             </div>
                             <div class="col-lg-4">
-                                <?php form_input(label: 'Tujuan', name: 'objective', value: $document['objective'] ?? '', disabled: $isdisabled) ?>
                                 <?php form_input(label: 'Tanggal Berangkat', name: 'leave_date', type: 'date', value: $document['leave_date'] ?? date('Y-m-d'), disabled: $isdisabled) ?>
                                 <?php form_input(label: 'Tanggal Kembali', name: 'back_date', type: 'date', value: $document['back_date'] ?? date('Y-m-d'), disabled: $isdisabled) ?>
                             </div>
                             <div class="col-lg-4">
-                                <?php form_input(label: 'Tanggal Transfer', name: 'transfer_date', type: 'date', value: $document['transfer_date'] ?? date('Y-m-d'), disabled: $isdisabled) ?>
-                                <?php form_select(
+                                <?php
+                                form_select(
                                     label: 'Metode Transfer',
                                     name: 'transfer_method',
-                                    options: array(array('B', 'TRANSFER BANK'), array('T', 'TUNAI'), array('C', 'CEK')),
+                                    options: array(array('B', 'TRANSFER BANK'), array('T', 'TUNAI')),
                                     value: $document['transfer_method'] ?? '',
                                     disabled: $isdisabled
-                                ) ?>
-                                <?php form_input(label: 'Bank Transfer', name: 'transfer_bank', value: $document['transfer_bank'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_input(label: 'No. Rekening', name: 'transfer_account', value: $document['transfer_account'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_input(label: 'Jumlah Transfer', name: 'transfer_amount', value: $document['transfer_amount'] ?? '', func: "setCurrency(this)", disabled: $isdisabled) ?>
-                                <?php //form_textarea(label: 'Catatan', rows: 3, name: 'transfer_note', value: $document['transfer_note'] ?? '', required: false) 
+                                )
+                                ?>
+                                <?php form_input(label: 'Bank Transfer', name: 'transfer_bank', value: $document['transfer_bank'] ?? '', disabled: $isdisabled)
+                                ?>
+                                <?php form_input(label: 'No. Rekening', name: 'transfer_account', value: $document['transfer_account'] ?? '', disabled: $isdisabled)
+                                ?>
+                                <?php form_input(label: 'Jumlah Pengajuan', name: 'transfer_amount', value: $document['transfer_amount'] ?? '', func: "calculate_item(this)", disabled: $isdisabled)
+                                ?>
+                                <?php form_input(label: 'Tanggal Transfer', name: 'transfer_date', value: $document['transfer_date'] ?? '', required: false, disabled: true)
                                 ?>
                             </div>
                         </div>
                     <?php } else if ($type == "pc") { ?>
                         <div class="row mb-5">
                             <div class="col-lg-6">
-                                <?php form_input(label: 'Nama Proyek', name: 'project', value: $document['project'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_input(label: 'Nama Customer', name: 'customer', value: $document['customer'] ?? '', disabled: $isdisabled) ?>
+                                <?php form_input(label: 'Tujuan', name: 'project', value: $document['project'] ?? '', disabled: $isdisabled) ?>
                             </div>
                             <div class="col-lg-6">
-                                <?php form_input(label: 'Bank Transfer', name: 'bank', value: $document['bank'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_input(label: 'No. Rekening', name: 'account', value: $document['account'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_input(label: 'Nama Rekening', name: 'account_name', value: $document['account_name'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_textarea(label: 'Catatan', rows: 3, name: 'note', value: $document['note'] ?? '', required: false, disabled: $isdisabled) ?>
+                                <?php
+                                form_select(
+                                    label: 'Metode Transfer',
+                                    name: 'transfer_method',
+                                    options: array(array('B', 'TRANSFER BANK'), array('T', 'TUNAI')),
+                                    value: $document['transfer_method'] ?? '',
+                                    disabled: $isdisabled
+                                )
+                                ?>
+                                <?php form_input(label: 'Bank Transfer', name: 'transfer_bank', value: $document['transfer_bank'] ?? '', disabled: $isdisabled) ?>
+                                <?php form_input(label: 'No. Rekening', name: 'transfer_account', value: $document['transfer_account'] ?? '', disabled: $isdisabled) ?>
+                                <?php form_input(label: 'Nama Rekening', name: 'transfer_account_name', value: $document['transfer_account_name'] ?? '', disabled: $isdisabled) ?>
                             </div>
                         </div>
                     <?php } else if ($type == "pp") { ?>
                         <div class="row mb-5">
                             <div class="col-lg-6">
-                                <?php form_input(label: 'Nama Proyek', name: 'project', value: $document['project'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_input(label: 'Nama Customer', name: 'customer', value: $document['customer'] ?? '', disabled: $isdisabled) ?>
+                                <?php form_input(label: 'Tujuan', name: 'project', value: $document['project'] ?? '', disabled: $isdisabled) ?>
                                 <?php form_input(label: 'Jenis Pembelian', name: 'buy_type', value: $document['buy_type'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_input(label: 'Tanggal Pembelian', name: 'buy_date', type: 'date', value: $document['buy_date'] ?? date('Y-m-d'), disabled: $isdisabled) ?>
-                                <?php form_input(label: 'Batas Pembayaran', name: 'payment_max_date', type: 'date', value: $document['payment_max_date'] ?? date('Y-m-d'), required: false, disabled: $isdisabled) ?>
+                                <?php form_textarea(
+                                    label: 'Catatan Pembelian',
+                                    rows: 3,
+                                    name: 'buy_note',
+                                    value: $document['buy_note'] ?? '',
+                                    required: false,
+                                    disabled: $isdisabled
+                                ) ?>
                             </div>
                             <div class="col-lg-6">
-                                <?php form_input(label: 'Nama Vendor', name: 'vendor', value: $document['vendor'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_input(label: 'Bank Vendor', name: 'vendor_bank', value: $document['vendor_bank'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_input(label: 'No. Rekening Vendor', name: 'vendor_account', value: $document['vendor_account'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_input(label: 'Nama Rekening Vendor', name: 'vendor_account_name', value: $document['vendor_account_name'] ?? '', disabled: $isdisabled) ?>
+                                <?php
+                                form_select(
+                                    label: 'Metode Transfer',
+                                    name: 'transfer_method',
+                                    options: array(array('B', 'TRANSFER BANK'), array('T', 'TUNAI')),
+                                    value: $document['transfer_method'] ?? '',
+                                    disabled: $isdisabled
+                                )
+                                ?>
+                                <?php form_input(label: 'Bank Transfer', name: 'transfer_bank', value: $document['transfer_bank'] ?? '', disabled: $isdisabled) ?>
+                                <?php form_input(label: 'No. Rekening', name: 'transfer_account', value: $document['transfer_account'] ?? '', disabled: $isdisabled) ?>
+                                <?php form_input(label: 'Nama Rekening', name: 'transfer_account_name', value: $document['transfer_account_name'] ?? '', disabled: $isdisabled) ?>
                             </div>
                         </div>
                     <?php } else if ($type == "all") { ?>
                         <div class="row mb-5">
                             <div class="col-lg-4">
-                                <?php form_select(
+                                <?php
+                                $options = [];
+                                foreach ($doctypes as $row) {
+                                    if ($row['type'] != 'A') continue;
+                                    $options[] = array($row['id'], $row['name'] . ' [' . $row['code'] . ']');
+                                }
+                                form_select(
                                     label: 'Tipe Dokumen',
                                     name: 'doctype_id',
-                                    options: get_array_options($doctypes, 'id', array('name', ' [', 'code', ']')),
+                                    options: $options,
                                     value: $document['doctype_id'] ?? '',
                                     disabled: $isdisabled
                                 ) ?>
@@ -216,208 +255,137 @@ if (
                         <?php form_textarea(label: 'Isi Surat', rows: 3, name: 'content', value: $document['content'] ?? '', disabled: $isdisabled) ?>
                     <?php } ?>
 
-                    <?php if (false) { ?>
-                        <table class="table table-bordered mb-5">
-                            <thead>
-                                <tr>
-                                    <th>DESKRIPSI</th>
-                                    <th>FILE</th>
-                                    <th>
-                                        <button type="button" class="btn btn-xs btn-icon btn-success <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> id="add-dfile"><i class="fas fa-plus"></i></button>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody id="dfiles">
-                                <?php foreach ($dfile as $row) { ?>
-                                    <tr class="dfile">
-                                        <td>
-                                            <?php form_input(label: null, name: 'note_f[]', value: $row['note'] ?? '', form: false, required: false, disabled: $isdisabled) ?>
-                                        </td>
-                                        <td>
-                                            <?php if (isset($row['file'])) { ?>
-                                                <a href="<?= base_url() . $row['file'] ?>" target="_blank"><?= $row['file'] ?></a>
-                                            <?php } ?>
+                    <?php
+                    $isfinance = $iscanapprove && substr($approvecode, 1, 1) == 'F';
+                    if ($isfinance || count($dfile ?? []) > 1) {
+                    ?>
+                        <button id="add-dfile" type="button" class="btn btn-primary d-none">TAMBAH BUKTI TRANSFER</button>
+                        <div class="dfiles">
+                            <span class="font-weight-bolder">BUKTI TRANSFER</span>
+                            <?php foreach ($dfile as $row) {
+                            ?>
+                                <div class="dfile <?= (empty($row['file'] ?? '') && count($dfile ?? []) > 1) ? 'd-none' : '' ?>">
+                                    <?php form_input(label: null, type: "hidden", name: 'file_f_[]', value: $row['file'] ?? '', required: false, disabled: !($iscanapprove && $isfinance)) ?>
+                                    <?php form_input(label: null, type: 'file', name: 'file_f[]', value: '', required: false, accept: ".jpg, .jpeg, .png", disabled: !($iscanapprove && $isfinance)) ?>
 
-                                            <?php form_input(label: null, type: "hidden", name: 'file_f_[]', value: $row['file'] ?? '', form: false, required: false, disabled: $isdisabled) ?>
-                                            <?php form_input(label: null, type: 'file', name: 'file_f[]', value: '', form: false, required: false, accept: ".pdf, .jpg, .jpeg, .png", disabled: $isdisabled) ?>
-
-                                            <button type="button" class="btn btn-block btn-primary btn-sm mb-1 <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="$(this).closest('td').find('.file_f').click()"><i class="la la-paperclip"></i> ATTACH</button>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
-                                        </td>
-                                    </tr>
-                                <?php } ?>
-                            </tbody>
-                        </table>
+                                    <table>
+                                        <tr>
+                                            <td>
+                                                <button type="button" class="btn btn-success <?= !($iscanapprove && $isfinance) ? 'disabled' : '' ?>" <?= !($iscanapprove && $isfinance) ? 'disabled' : '' ?> onclick="$(this).closest('.dfile').find('.file_f').click()"><i class="la la-upload"></i> UPLOAD BUKTI TRANSFER</button>
+                                            </td>
+                                            <td>
+                                                <?php if (isset($row['file'])) { ?>
+                                                    <a class="btn btn-primary" href="<?= base_url() . $row['file'] ?>" target="_blank"><i class="la la-image"></i> VIEW</a>
+                                                <?php } ?>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <br>
+                                    <?php form_textarea(label: 'Catatan Transfer', name: 'note_f[]', value: $row['note'] ?? '', required: false, disabled: !($iscanapprove && $isfinance)) ?>
+                                </div>
+                            <?php } ?>
+                        </div>
                     <?php } ?>
 
-                    <?php if ($type == "ca") { ?>
-                        <table class="table table-bordered mb-5 table-responsive">
-                            <thead>
-                                <tr>
-                                    <th nowrap="nowrap">DESKRIPSI<span class="text-white">----------</span></th>
-                                    <th nowrap="nowrap">UNIT<span class="text-white">----------</span></th>
-                                    <th nowrap="nowrap">@HARGA<span class="text-white">----------</span></th>
-                                    <th nowrap="nowrap">SUBTOTAL<span class="text-white">----------</span></th>
-                                    <th nowrap="nowrap">PEMAKAIAN<span class="text-white">----------</span></th>
-                                    <th nowrap="nowrap">BUKTI<span class="text-white">----------</span></th>
-                                    <th>
-                                        <button type="button" class="btn btn-xs btn-icon btn-success <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?>" <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?> id="add-item"><i class="fas fa-plus"></i></button>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody id="items">
-                                <?php foreach ($item as $row) { ?>
-                                    <tr class="item">
-                                        <td>
-                                            <?php form_textarea(label: null, name: 'description[]', value: $row['description'] ?? '', form: false, required: false, disabled: $isdisabled) ?>
-                                        </td>
-                                        <td>
-                                            <?php form_input(label: null, name: 'unit[]', type: 'number', value: $row['unit'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled) ?>
-                                        </td>
-                                        <td>
-                                            <?php form_input(label: null, name: 'price[]', value: $row['price'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled) ?>
-                                        </td>
-                                        <td>
-                                            <?php form_input(label: null, name: 'subtotal[]', value: $row['subtotal'] ?? '', form: false, required: false, disabled: true) ?>
-                                        </td>
-                                        <td>
-                                            <?php form_input(label: null, name: 'used[]', value: $row['used'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled) ?>
-                                        </td>
-                                        <td nowrap="nowrap">
-                                            <?php if (isset($row['file'])) { ?>
-                                                <a class="btn btn-block btn-primary btn-sm mb-1" href="<?= base_url() . $row['file'] ?>" target="_blank"><i class="la la-image"></i> VIEW</a>
-                                            <?php } ?>
-
-                                            <?php form_input(label: null, type: "hidden", name: 'file_[]', value: $row['file'] ?? '', form: false, required: false, disabled: $isdisabled) ?>
-                                            <?php form_input(label: null, type: 'file', name: 'file[]', value: '', form: false, required: false, accept: ".pdf, .jpg, .jpeg, .png", disabled: $isdisabled) ?>
-
-                                            <button type="button" class="btn btn-block btn-primary btn-sm mb-1 <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="$(this).closest('td').find('.file').click()"><i class="la la-paperclip"></i> ATTACH</button>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
-                                        </td>
+                    <?php if ($type == "ca" || $type == "pc" || $type == "pp") { ?>
+                        <div class="<?= ($iscancomplete || count($item ?? []) > 1 || $type != "ca") ? '' :  'd-none' ?>">
+                            <div class="font-weight-bolder mb-5">DETAIL PENGAJUAN</div>
+                            <table class="table table-bordered mb-5 table-responsive">
+                                <thead>
+                                    <tr>
+                                        <th nowrap="nowrap">DESKRIPSI<span class="text-white">----------</span></th>
+                                        <th nowrap="nowrap">UNIT<span class="text-white">----------</span></th>
+                                        <th nowrap="nowrap">@HARGA<span class="text-white">----------</span></th>
+                                        <th nowrap="nowrap">SUBTOTAL<span class="text-white">----------</span></th>
+                                        <th nowrap="nowrap">BUKTI<span class="text-white">----------</span></th>
+                                        <th>
+                                            <button type="button" class="btn btn-xs btn-icon btn-success <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?>" <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?> id="add-item"><i class="fas fa-plus"></i></button>
+                                        </th>
                                     </tr>
-                                <?php } ?>
-                            </tbody>
-                        </table>
-                    <?php } else if ($type == "pc") { ?>
-                        <table class="table table-bordered mb-5 table-responsive">
-                            <thead>
-                                <tr>
-                                    <th nowrap="nowrap">DESKRIPSI<span class="text-white">----------</span></th>
-                                    <th nowrap="nowrap">UNIT<span class="text-white">----------</span></th>
-                                    <th nowrap="nowrap">@HARGA<span class="text-white">----------</span></th>
-                                    <th nowrap="nowrap">SUBTOTAL<span class="text-white">----------</span></th>
-                                    <th nowrap="nowrap">BUKTI<span class="text-white">----------</span></th>
-                                    <th>
-                                        <button type="button" class="btn btn-xs btn-icon btn-success <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?>" <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?> id="add-item"><i class="fas fa-plus"></i></button>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody id="items">
-                                <?php foreach ($item as $row) { ?>
-                                    <tr class="item">
-                                        <td>
-                                            <?php form_input(label: null, name: 'description[]', value: $row['description'] ?? '', form: false, required: false, disabled: $isdisabled) ?>
-                                        </td>
-                                        <td>
-                                            <?php form_input(label: null, name: 'unit[]', type: 'number', value: $row['unit'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled) ?>
-                                        </td>
-                                        <td>
-                                            <?php form_input(label: null, name: 'price[]', value: $row['price'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled) ?>
-                                        </td>
-                                        <td>
-                                            <?php form_input(label: null, name: 'subtotal[]', value: $row['subtotal'] ?? '', form: false, required: false, disabled: true) ?>
-                                        </td>
-                                        <td nowrap="nowrap">
-                                            <?php if (isset($row['file'])) { ?>
-                                                <a class="btn btn-icon btn-primary btn-xs mb-1" href="<?= base_url() . $row['file'] ?>" target="_blank"><i class="la la-image"></i></a>
-                                            <?php } ?>
+                                </thead>
+                                <tbody id="items">
+                                    <?php foreach ($item as $row) {
+                                    ?>
+                                        <tr class="item <?= empty($row['description']) ? 'd-none' : '' ?>">
+                                            <td>
+                                                <?php form_textarea(label: null, name: 'description[]', value: $row['description'] ?? '', form: false, required: false, disabled: $isdisabled && !$iscancomplete) ?>
+                                            </td>
+                                            <td>
+                                                <?php form_input(label: null, name: 'unit[]', type: 'number', value: $row['unit'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled && !$iscancomplete) ?>
+                                            </td>
+                                            <td>
+                                                <?php form_input(label: null, name: 'price[]', value: $row['price'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled && !$iscancomplete) ?>
+                                            </td>
+                                            <td>
+                                                <?php form_input(label: null, name: 'subtotal[]', value: $row['subtotal'] ?? '', form: false, required: false, disabled: true) ?>
+                                            </td>
+                                            <td nowrap="nowrap" class="td">
+                                                <?php form_input(label: null, type: "hidden", name: 'file_[]', value: $row['file'] ?? '', form: false, required: false, disabled: $isdisabled && !$iscancomplete) ?>
+                                                <?php form_input(label: null, type: 'file', name: 'file[]', value: '', form: false, required: false, accept: ".jpg, .jpeg, .png", disabled: $isdisabled && !$iscancomplete) ?>
 
-                                            <?php form_input(label: null, type: "hidden", name: 'file_[]', value: $row['file'] ?? '', form: false, required: false, disabled: $isdisabled) ?>
-                                            <?php form_input(label: null, type: 'file', name: 'file[]', value: $row['file'] ?? '', form: false, required: false, accept: ".pdf, .jpg, .jpeg, .png", disabled: $isdisabled) ?>
-
-                                            <button type="button" class="btn btn-icon btn-primary btn-xs mb-1 <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="$(this).closest('td').find('.file').click()"><i class="la la-paperclip"></i></button>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
-                                        </td>
-                                    </tr>
-                                <?php } ?>
-                            </tbody>
-                        </table>
-                    <?php } else if ($type == "pp") { ?>
-                        <table class="table table-bordered mb-5 table-responsive">
-                            <thead>
-                                <tr>
-                                    <th nowrap="nowrap">NAMA BARANG<span class="text-white">----------</span></th>
-                                    <th nowrap="nowrap">UNIT<span class="text-white">----------</span></th>
-                                    <th nowrap="nowrap">@HARGA<span class="text-white">----------</span></th>
-                                    <th nowrap="nowrap">SUBTOTAL<span class="text-white">----------</span></th>
-                                    <th>
-                                        <button type="button" class="btn btn-xs btn-icon btn-success <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?>" <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?> id="add-item"><i class="fas fa-plus"></i></button>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody id="items">
-                                <?php foreach ($item as $row) { ?>
-                                    <tr class="item">
-                                        <td>
-                                            <?php form_input(label: null, name: 'item[]', value: $row['item'] ?? '', form: false, required: false, disabled: $isdisabled) ?>
-                                        </td>
-                                        <td>
-                                            <?php form_input(label: null, name: 'unit[]', type: 'number', value: $row['unit'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled) ?>
-                                        </td>
-                                        <td>
-                                            <?php form_input(label: null, name: 'price[]', value: $row['price'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled) ?>
-                                        </td>
-                                        <td>
-                                            <?php form_input(label: null, name: 'subtotal[]', value: $row['subtotal'] ?? '', form: false, required: false, disabled: true) ?>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled ? 'disabled' : '' ?>" <?= $isdisabled ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
-                                        </td>
-                                    </tr>
-                                <?php } ?>
-                            </tbody>
-                        </table>
+                                                <table border="0">
+                                                    <tr>
+                                                        <td>
+                                                            <button type="button" class="btn btn-primary <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?>" <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?> onclick="$(this).closest('.td').find('.file').click()"><i class="la la-paperclip"></i> UPLOAD</button>
+                                                        </td>
+                                                        <td>
+                                                            <?php if (isset($row['file'])) { ?>
+                                                                <a class="btn btn-primary" href="<?= base_url() . $row['file'] ?>" target="_blank"><i class="la la-image"></i> SHOW</a>
+                                                            <?php } ?>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-danger btn-icon btn-xs <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?>" <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?> onclick="remove_item(this)"><i class="fas fa-minus"></i></button>
+                                            </td>
+                                        </tr>
+                                    <?php } ?>
+                                </tbody>
+                            </table>
+                        </div>
                     <?php } else if ($type == "all") { ?>
                     <?php } ?>
 
-                    <div class="row" id="card-item">
-                        <div class="col-lg-4 mb-5">
-                            <div class="card card-custom bg-light-primary text-primary">
-                                <div class="card-body">
-                                    <div class="card-title font-weight-bolder font-size-h6 mb-4 d-block">TOTAL HARGA</div>
-                                    <div class="font-size-h3 font-weight-bolder mr-2" id="sum-subtotal">
-                                        Rp. 0
+                    <?php if ($type == "ca") { ?>
+                        <div class="<?= ($iscancomplete) ? '' :  'd-none' ?>">
+                            <div class="row mt-5">
+                                <div class="col-lg-4 mb-5">
+                                    <div class="card card-custom bg-light-primary text-primary card-stretch">
+                                        <div class="card-body">
+                                            <div class="card-title font-weight-bolder font-size-h6 mb-4 d-block">TOTAL TRANSFER</div>
+                                            <div class="font-size-h3 font-weight-bolder mr-2" id="sum-subtotal">
+                                                Rp. 0
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4 mb-5">
+                                    <div class="card card-custom bg-light-warning text-warning card-stretch">
+                                        <div class="card-body">
+                                            <div class="card-title font-weight-bolder font-size-h6 mb-4 d-block">TOTAL PEMAKAIAN</div>
+                                            <div class="font-size-h3 font-weight-bolder mr-2" id="sum-used">
+                                                Rp. 0
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4 mb-5">
+                                    <div class="card card-custom bg-light-danger text-danger card-stretch" id="card-diff">
+                                        <div class="card-body">
+                                            <div class="card-title font-weight-bolder font-size-h6 mb-4 d-block">SISA TRANSFER</div>
+                                            <div class="font-size-h3 font-weight-bolder mr-2" id="sum-diff">
+                                                Rp. 0
+                                            </div>
+                                            <?php if (count($item) > 1) { ?>
+                                                <button class="btn btn-white mt-5" id="btn-transfer" type="button" onclick="$('#modal-transfer').modal('show')">FORM TRANSFER</button>
+                                            <?php } ?>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-4 mb-5">
-                            <div class="card card-custom bg-light-warning text-warning">
-                                <div class="card-body">
-                                    <div class="card-title font-weight-bolder font-size-h6 mb-4 d-block">TOTAL PEMAKAIAN</div>
-                                    <div class="font-size-h3 font-weight-bolder mr-2" id="sum-used">
-                                        Rp. 0
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 mb-5">
-                            <div class="card card-custom bg-light-danger text-danger" id="card-diff">
-                                <div class="card-body">
-                                    <div class="card-title font-weight-bolder font-size-h6 mb-4 d-block">SISA TRANSFER</div>
-                                    <div class="font-size-h3 font-weight-bolder mr-2" id="sum-diff">
-                                        Rp. 0
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <?php } ?>
                 </div>
 
                 <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
@@ -429,7 +397,7 @@ if (
         </div>
     </div>
 
-    <div class="card card-custom mb-5 d-non">
+    <div class="card card-custom mb-5 d-none">
         <div class="card-body">
             <div class="row">
                 <div class="col-lg-3">
@@ -438,12 +406,25 @@ if (
                 <div class="col-lg-3">
                     <?php
                     $options = [];
+                    $isinoptions = false;
                     foreach ($docstatus as $row) {
-                        if ($row['approve_code'] == 'A' && ($document['user_create_id'] ?? '') != $_SESSION['user']['id']) {
-                            continue;
+                        if (($document['from_division_id'] ?? '') == $_SESSION['user']['division_id']) {
+                            if (
+                                substr($row['code'], 0, 1) != 'N'
+                                && substr($row['code'], 0, 1) != 'P'
+                                && $row['approve_code'] != ''
+                                && !str_contains($row['name'], '_HEAD')
+                            ) {
+                                continue;
+                            }
                         }
                         $options[] = array($row['code'], $row['name'] . ' [' . $row['code'] . ']');
+                        if ($row['code'] == $approvecode) {
+                            $isinoptions = true;
+                        }
                     }
+                    $iscanapprove = $iscanapprove && $isinoptions;
+                    $options[] = array($statuscode, '');
                     form_select(
                         label: 'Status',
                         name: 'status',
@@ -475,53 +456,65 @@ if (
     </div>
 
 
-    <div class="card card-custom">
+    <div class="card card-custom <?= $isinform ? '' : 'd-none' ?>">
         <div class="card-body">
-            <?php form_textarea(
-                label: 'Catatan',
-                rows: 3,
-                name: 'note',
-                value: $document['note'] ?? '',
-                required: false,
-                disabled: !($isdisabled && $iscanapprove && $isinform)
-            ) ?>
-            <div class="text-right">
-                <?php
-                if ($isnew) {
-                ?>
-                    <button type="button" class="btn btn-dark font-weight-bolder" onclick="save_as_draft()">
-                        <span class="svg-icon svg-icon-md">
-                            <i class="la la-save"></i>
-                        </span>Draft
-                    </button>
-                    <button class="btn btn-success" id="btn-save" type="button" onclick="save_approve()"><i class="la la-upload"></i> Kirim</button>
-                <?php } ?>
-                <?php
-                if ($iscanapprove && $isinform) {
-                ?>
-                    <button class="btn btn-success" type="button" onclick="save_approve()"><i class="la la-check"></i> Approve</button>
-                    <button class="btn btn-warning" type="button" onclick="save_revisi()"><i class="la la-reply"></i> Revisi</button>
-                    <button class="btn btn-danger" type="button" onclick="save_reject()"><i class="la la-close"></i> Reject</button>
-                <?php
-                }
-                ?>
+            <div class="<?= !($isdisabled && $iscanapprove) ? 'd-none' : '' ?>">
+                <?php form_textarea(
+                    label: 'Catatan',
+                    rows: 3,
+                    name: 'note',
+                    value: $document['note'] ?? '',
+                    required: false,
+                    disabled: $isreview
+                ) ?>
             </div>
+            <?php if (!$isreview) { ?>
+                <div class="text-right">
+                    <?php
+                    if ($iscanapprove || $isnew  || $iscancomplete) {
+                    ?>
+                        <button type="button" class="btn btn-dark font-weight-bolder" onclick="save_as_draft()">
+                            <span class="svg-icon svg-icon-md">
+                                <i class="la la-save"></i>
+                            </span>Draft
+                        </button>
+                    <?php
+                    }
+                    ?>
+                    <?php
+                    if ($isnew || $iscancomplete) {
+                    ?>
+                        <button class="btn btn-success" id="btn-save" type="button" onclick="save_approve()"><i class="la la-upload"></i> Kirim</button>
+                    <?php } ?>
+                    <?php
+                    if ($iscanapprove) {
+                    ?>
+                        <button class="btn btn-success" type="button" onclick="save_approve()"><i class="la la-check"></i> Approve</button>
+                        <button class="btn btn-warning" type="button" onclick="save_revisi()"><i class="la la-reply"></i> Revisi</button>
+                        <button class="btn btn-danger" type="button" onclick="save_reject()"><i class="la la-close"></i> Reject</button>
+                    <?php
+                    }
+                    ?>
+                </div>
+            <?php } ?>
         </div>
     </div>
 </form>
+
+<?php if ($type == 'ca' && count($item) > 1) {
+    modal_transfer($this, $document, $transfer, $divisions);
+} ?>
+
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote.min.js"></script>
 <script>
     $(document).ready(function() {
-        if (!$('.used').length) {
-            $("#card-item").remove();
-        }
-
         $('#content').summernote(<?= $isdisabled ? '"disable"' : '' ?>);
     });
 
     $("#add-item").click(function() {
-        $("#items").append("<tr class='item'>" + $(".item").last().html().replace(/disabled/g, '').replace(/readonly/g, '') + "</tr>");
+        $("#items").append("<tr class='item'>" + $(".item").last().html().replace(/disabled/g, '').replace(/readonly/g, '').replace(/form-control-solid/g, '').replace(/d-none/g, '') + "</tr>");
+        $(".item").last().find(".subtotal").addClass("form-control-solid").attr("disabled", "disabled").attr("readonly", "readonly");
     });
 
     function remove_item(e) {
@@ -531,7 +524,7 @@ if (
     };
 
     $("#add-dfile").click(function() {
-        $("#dfiles").append("<tr class='dfile'>" + $(".dfile").last().html().replace(/disabled/g, '').replace(/readonly/g, '') + "</tr>");
+        $("#dfiles").append("<div class='dfile'>" + $(".dfile").last().html().replace(/disabled/g, '').replace(/readonly/g, '').replace(/form-control-solid/g, '').replace(/d-none/g, '') + "</div>");
     });
 
     function remove_dfile(e) {
@@ -541,20 +534,31 @@ if (
     };
 
     function save_as_draft() {
-        $('#status option').each(function() {
-            if ($(this).val().substring(0, 1) == "N")
-                $("#status").val($(this).val()).change();
-        });
-        if ($("#status").val() != null) {
-            show_confirm_modal_form("Data anda akan masuk ke tahapan " + $("#status option:selected").text() + ".");
-        }
+        <?php if ($isnew) { ?>
+            $('#status option').each(function() {
+                if ($(this).val().substring(0, 1) == "N")
+                    $("#status").val($(this).val()).change();
+            });
+        <?php } else { ?>
+            $("#status").val("<?= $statuscode ?>").change();
+        <?php
+        } ?>
+
+        show_confirm_modal_form("");
     }
 
     function save_approve() {
-        $("#status").val("<?= $approvecode ?>").change();
-        if ($("#status").val() != null) {
-            show_confirm_modal_form("Data anda akan disetujui ke tahapan " + $("#status option:selected").text() + ".");
-        }
+        <?php if ($isnew) { ?>
+            $('#status option').each(function() {
+                if ($(this).val().substring(0, 1) == "P")
+                    $("#status").val($(this).val()).change();
+            });
+        <?php } else { ?>
+            $("#status").val("<?= $approvecode ?>").change();
+        <?php
+        } ?>
+
+        show_confirm_modal_form("Data anda akan disetujui ke tahapan " + $("#status option:selected").text() + ".");
     }
 
     function save_reject() {
