@@ -4,29 +4,28 @@
             <div class="mt-5">
                 <button class="btn btn-light-danger font-weight-bolder btn-sm"><i class="la la-layer-group"></i> ARCHIVER V.2.0</button>
                 <button class="btn btn-light-danger font-weight-bolder btn-sm ml-2"><i class="la la-calendar"></i> <?= date('d/m/Y H:i') ?></button>
-                <button type="button" class="btn btn-light-danger font-weight-bolder btn-sm ml-2 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="la la-building"></i> <?= $_SESSION['company_name'] ?? "" ?>
-                </button>
-                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                    <ul class="navi flex-column navi-hover py-2">
-                        <?php
-                        foreach ($this->mod_company->get_company() as $row) {
-                        ?>
-                            <li class="navi-item">
-                                <a href="<?= base_url() . 'dashboard/crosspt/' . $row['id'] ?>" class="navi-link">
-                                    <!--<img src="https://corsys.co.id/assets/img/logo-2.png" alt="" height="20">-->
-                                    <span class="font-size-sm ml-3"><?= $row['name'] ?></span>
-                                </a>
-                            </li>
-                        <?php
-                        }
-                        ?>
-                    </ul>
-                </div>
                 <button class="btn btn-light-danger font-weight-bolder btn-sm"><i class="la la-sitemap"></i> <?= $_SESSION['user']['division_name'] ?? "" ?></button>
             </div>
         </div>
         <div class="topbar">
+            <div class="btn-group">
+                <div class="topbar-item" data-toggle="dropdown">
+                    <div class="btn btn-light-danger btn-sm mr-1">
+                        <span class="font-weight-bolder"><i class="la la-home"></i> <?= $_SESSION['company_name'] ?? "" ?> </span>
+                    </div>
+                </div>
+                <div class="dropdown-menu">
+                    <?php
+                    foreach ($this->mod_company->get_company() as $row) {
+                    ?>
+                        <a href="<?= base_url() . 'dashboard/crosspt/' . $row['id'] ?>" class="dropdown-item">
+                            <span class="font-size-sm"><?= $row['name'] ?></span>
+                        </a>
+                    <?php
+                    }
+                    ?>
+                </div>
+            </div>
             <div class="dropdown">
                 <?php $notification = $this->mod_notification->get_notification($_SESSION['user']['division_id']); ?>
                 <div class="topbar-item" data-toggle="dropdown" data-offset="10px,0px">

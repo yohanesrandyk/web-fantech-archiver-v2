@@ -108,7 +108,7 @@
                         <?php if ($type == "ca" || $type == "pc" || $type == "pp") { ?>
                             <td><?= $row['project'] ?></td>
                             <td><?= custom_date_format($row['create_date'], 'd/m/Y') ?></td>
-                            <td>Rp. <?= number_format($row['transfer_amount']) ?></td>
+                            <td>Rp. <?= number_format($row['transfer_amount'] == 0 ? $row['transfer_amount_2'] : $row['transfer_amount']) ?></td>
                         <?php } else if ($type == "all") { ?>
                             <td><?= $row['subject'] ?></td>
                             <td><?= $row['user_create'] ?></td>

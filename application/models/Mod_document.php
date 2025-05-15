@@ -12,12 +12,12 @@ class Mod_document extends CI_Model
     public function get_document($id, $type, $division_id = "%", $company_id = "%")
     {
         return $this->db->query(
-            "SELECT docstatus.*, document_2.*, document_all.*, docstatus.name as docstatus_name, company.code as company_code, company.name AS company_name, from_division.name AS from_division, to_division.name AS to_division, doctype.name AS doctype_name, document_all.id id, document_2.id id_2, 
+            "SELECT docstatus.*, document_2.*, document_all.*, docstatus.name as docstatus_name, company.code as company_code, company.name AS company_name, from_division.name AS from_division, to_division.name AS to_division, doctype.name AS doctype_name, doctype.code AS doctype_code, doctype.type AS doctype_type, document_all.id id, document_2.id id_2, 
         CASE 
             WHEN document_all.from_division_id LIKE ?
             OR docstatus.to_division_id LIKE ? 
             THEN 1 ELSE 0 END AS is_division,
-        IFNULL((SELECT SUM(unit * price) FROM item_document WHERE document_id = document_all.id), 0) AS transfer_amount
+        IFNULL((SELECT SUM(unit * price) FROM item_document WHERE document_id = document_all.id), 0) AS transfer_amount_2
         FROM document_all
         INNER JOIN docstatus ON docstatus.code = document_all.status
         INNER JOIN document_$type document_2 ON document_2.document_id = document_all.id

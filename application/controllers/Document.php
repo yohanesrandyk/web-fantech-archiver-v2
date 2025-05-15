@@ -227,6 +227,7 @@ class Document extends CI_Controller
 
     public function do_store($id, $type, $data)
     {
+        $document_number = "";
         if ($type != "all") {
             $id = $this->mod_document->get_document($id, $type)[0]["id_2"] ?? "";
         }
@@ -241,7 +242,9 @@ class Document extends CI_Controller
                 $document_number = $doctype_code . "/" . $division_code . "/" . $company_code . "/" . number_to_roman(date("m")) . "/" . date("Y");
                 $document_number = $this->mod_document->get_document_number("%" . $document_number)[0]["last_document_number"] . "/" . $document_number;
 
-                $data["document_number"]  = strtoupper($document_number);
+                $document_number = strtoupper($document_number);
+
+                $data["document_number"]  = $document_number;
                 $data['user_create_id'] = $_SESSION['user']['id'];
             }
             $id = $this->mod_document->add_document($type, $data);
@@ -262,7 +265,7 @@ class Document extends CI_Controller
             $division_id = !empty($division_id) ? $division_id[0]['to_division_id'] : "0";
             $division_id = $division_id != '0' ? $division_id : $_SESSION['user']['division_id'];
             $notification = array(
-                "title"     => 'PEMBERITAHUAN! TERDAPAT 1 DOKUMEN BARU DENGAN NOMOR ' . $_POST["document_number"],
+                "title"     => 'PEMBERITAHUAN! TERDAPAT 1 DOKUMEN BARU DENGAN NOMOR ' . (!empty($_POST["document_number"] ?? "") ? $_POST["document_number"] : $document_number),
                 "body"  =>  $_SESSION['user']['username'] . " : HARAP DAPAT SEGERA MELAKUKAN REVIEW TERHADAP DOKUMEN. " . $_POST["note"],
                 "to_division_id" => $division_id,
                 "notif_date" => date("Y-m-d H:i:s"),
@@ -294,8 +297,16 @@ class Document extends CI_Controller
         );
         $this->mod_document->set_document($id, "all", $data_);
 
-        $template = "_shared/template/" . $type . "_" . $data["company_code"] . ".docx";
-        $template = strtolower($template);
+        $template = "_shared/template/" . strtolower($data["doctype_code"]) . "_" . strtolower($data["company_code"]) . ".docx";
+        if (!file_exists($template)) {
+            $template = "_shared/template/" . strtolower($type) . "_" . strtolower($data["company_code"]) . ".docx";
+        }
+
+        if (!file_exists($template)) {
+            $this->session->set_flashdata("errmsg", "Template dokumen tidak ditemukan. Silahkan hubungi administrator.");
+            return redirect("document/form/$type/$id");
+        }
+
         $filename = "_shared/surat/";
         $filename .= str_replace('/', '-', $data["doctype_name"]) . "-" . $data["company_code"] . "-" . str_replace("/", "-", $data["document_number"]) . "-" . date("YmdHis");
 
