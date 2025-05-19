@@ -130,7 +130,7 @@ class Document extends CI_Controller
                 "status"            => $_POST["status"] ?? '',
             );
             $document_id = $this->do_store($id, "all", $data);
-            if ($type == "ca" || $type == "pc" || $type == "pp") {
+            if ($type == "ca" || $type == "pc" || $type == "pp" || $type == "pr") {
                 $transfer_date = $this->store_file($document_id);
 
                 $data = array(
@@ -146,7 +146,7 @@ class Document extends CI_Controller
                 if ($type == "ca") {
                     $data["leave_date"] = $_POST["leave_date"] ?? '';
                     $data["back_date"]  = $_POST["back_date"] ?? '';
-                } else if ($type == "pp") {
+                } else if ($type == "pp" || $type == "pr") {
                     $data["buy_type"]   = $_POST["buy_type"] ?? '';
                     $data["buy_note"]   = $_POST["buy_note"] ?? '';
                 }
@@ -202,7 +202,7 @@ class Document extends CI_Controller
 
     public function store_item($type, $data)
     {
-        if ($type == "ca" || $type == "pc" || $type == "pp") {
+        if ($type == "ca" || $type == "pc" || $type == "pp" || $type == "pr") {
             $this->mod_document_item->remove_document_item($data['document_id'] ?? '', $type);
             for ($i = 0; $i < count($_POST['description'] ?? []); $i++) {
                 if ($_POST['description'][$i] ?? '' != "") {
@@ -310,17 +310,24 @@ class Document extends CI_Controller
         $filename = "_shared/surat/";
         $filename .= str_replace('/', '-', $data["doctype_name"]) . "-" . $data["company_code"] . "-" . str_replace("/", "-", $data["document_number"]) . "-" . date("YmdHis");
 
+        $docstatus = $this->mod_docstatus->get_docstatus('%', '%', '%' . $type . '%', '%');
+        foreach ($docstatus as $row) {
+            if ($row["to_division"] != 'SEMUA DIVISI') {
+                $docstatus = $row["to_division"];
+            }
+        }
+
         $data_ = array(
             "document_number" => $data["document_number"],
-            "subject" => $data["subject"],
-            "user_create" => $data["user_create"],
+            "subject" => $data["doctype_name"],
+            "user_create" => strtoupper($data["user_create"]),
             "from_division" => $data["from_division"],
-            "to_division" => $data["to_division"],
+            "to_division" => $docstatus,
             "html_content" => $data["content"],
-            "release_date" => custom_date_format($data["release_date"], 'd F Y')
+            "release_date" => ucwords(custom_date_format($data["release_date"], 'd F Y'))
         );
 
-        if ($type == "ca" || $type == "pc" || $type == "pp") {
+        if ($type == "ca" || $type == "pc" || $type == "pp" || $type == "pr") {
             $data_his_pd = $this->mod_document_his->get_document_his($id, 'PAC');
             $data_his_ap = $this->mod_document_his->get_document_his($id, 'AAC');
             $data_his_ac = $this->mod_document_his->get_document_his($id, 'ACD');
@@ -333,8 +340,8 @@ class Document extends CI_Controller
             $data_["create_date"] = custom_date_format($data["create_date"], 'd F Y');
             $data_["user_pend"] = '[' . ($data_his_pd[0]['user_update'] ?? '') . ']';
             $data_["pend_date"] = '[' . ((!empty($data_his_pd) ? custom_date_format($data_his_pd[0]['update_date'], 'd/m/Y H:i:s') : '')) . ']';
-            $data_["user_app"] = '[' . ($data_his_ap[0]['user_update'] ?? '') . ']';
-            $data_["app_date"] = '[' . ((!empty($data_his_ap) ? custom_date_format($data_his_ap[0]['update_date'], 'd/m/Y H:i:s') : '')) . ']';
+            $data_["user_appr"] = '[' . ($data_his_ap[0]['user_update'] ?? '') . ']';
+            $data_["appr_date"] = '[' . ((!empty($data_his_ap) ? custom_date_format($data_his_ap[0]['update_date'], 'd/m/Y H:i:s') : '')) . ']';
             $data_["user_acc"] = '[' . ($data_his_ac[0]['user_update'] ?? '') . ']';
             $data_["acc_date"] = '[' . ((!empty($data_his_ac) ? custom_date_format($data_his_ac[0]['update_date'], 'd/m/Y H:i:s') : '')) . ']';
             $data_["user_dir"] = '[' . ($data_his_dr[0]['user_update'] ?? '') . ']';
@@ -344,7 +351,7 @@ class Document extends CI_Controller
 
             $data_['tujuan'] = $data["project"];
 
-            if ($type == "ca" || $type == "pc") {
+            if ($type == "ca" || $type == "pc" || $type == "pr") {
                 $data_["table_item"] = array();
                 $data_["image_item"] = array();
                 $data_["table_item"][] = array("No", "Keterangan Penggunaan", "Jumlah");
@@ -363,7 +370,7 @@ class Document extends CI_Controller
                 }
                 array_push($data_["table_item"], array("", "Total", number_format($total)));
                 array_push($data_["table_item"], array("", "Jumlah yang diterima", number_format($data['transfer_amount'])));
-                $data_["transfer_date"] = str_contains($data["transfer_date"], '0000') ? custom_date_format($data["transfer_date"] ?? '', 'd F Y') : '';
+                $data_["transfer_date"] = !str_contains($data["transfer_date"], '0000') ? custom_date_format($data["transfer_date"] ?? '', 'd F Y') : '';
             }
 
             if ($type == 'pp') {
@@ -381,7 +388,7 @@ class Document extends CI_Controller
                 $data_['transfer_account'] = $data["transfer_account"] ?? '';
                 $data_['transfer_bank'] = $data["transfer_bank"] ?? '';
                 $data_['transfer_account_name'] = ' atas nama ' . ($data["transfer_account_name"] ?? '');
-                $data_["transfer_date"] = str_contains($data["transfer_date"], '0000') ? custom_date_format($data["transfer_date"] ?? '', 'd F Y') : '';
+                $data_["transfer_date"] = !str_contains($data["transfer_date"], '0000') ? custom_date_format($data["transfer_date"] ?? '', 'd F Y') : '';
             }
         }
 
@@ -523,6 +530,10 @@ class Document extends CI_Controller
 
     function clean_html($html)
     {
+        // echo "<pre>";
+        // echo $html;
+        // echo "</pre>";
+
         $html = preg_replace('/<br([^>]*)>/', '<br $1/>', $html);
         $html = preg_replace('/<hr([^>]*)>/', '<hr $1/>', $html);
         $html = preg_replace('/<img([^>]*)>/', '<img $1/>', $html);
@@ -537,8 +548,33 @@ class Document extends CI_Controller
             }
         }
 
-        $html = str_replace('<p>', '', $html);
-        $html = str_replace('</p>', '', $html);
+        $html = preg_replace('/<p([^>]*)>/', '<p>', $html);
+        // $html = preg_replace('/<p([^>]*)>/', '<br/>', $html);
+        $html = preg_replace('/<b([^>]*)>/', '', $html);
+        $html = preg_replace('/<i([^>]*)>/', '', $html);
+        $html = preg_replace('/<span([^>]*)>/', '<span>', $html);
+
+        // $html = preg_replace('/<span([^>]*)>/', '', $html);
+        // $html = str_replace('</span>', '', $html);
+
+        $html = str_replace('</b>', '', $html);
+        $html = str_replace('</i>', '', $html);
+        // $html = str_replace('</p>', '', $html);
+        $html = str_replace('<o:p>', '', $html);
+        $html = str_replace('</o:p>', '', $html);
+
+        $html = preg_replace('/<!--([^>]*)>/', '', $html);
+
+        $html = str_replace('&nbsp;', '', $html);
+
+        // $html = preg_replace('/<p><img([^>]*)>/', '<img $i>', $html);
+        // $html = preg_replace('/<span><img([^>]*)>/', '<img $1>', $html);
+        // $html = preg_replace('/<img([^>]*)><\/p>/', '/<img([^>]*)>/', $html);
+        // $html = preg_replace('/<img([^>]*)><\/span>/', '/<img([^>]*)>/', $html);
+
+        // echo "<pre>";
+        // echo $html;
+        // echo "</pre>";
 
         return $html;
     }

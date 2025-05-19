@@ -9,8 +9,14 @@ class Mod_docstatus extends CI_Model
         parent::__construct();
     }
 
-    public function get_docstatus($id = "%", $division_id = "%", $doctype_id = '%', $role = '%')
+    public function get_docstatus($id = "%", $division_id = "%", $doctype_id = '%', $role = '%', $doctype_code = '-')
     {
+        $count = $this->db->query("SELECT docstatus.* FROM docstatus WHERE doctype_ids LIKE ?", array($doctype_code))->result_array();
+
+        if (count($count) > 0) {
+            $doctype_id = $doctype_code;
+        }
+
         return $this->db->query("SELECT docstatus.*, 
         to_division.name AS to_division 
         FROM docstatus

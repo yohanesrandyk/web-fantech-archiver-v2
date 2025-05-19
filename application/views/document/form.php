@@ -228,9 +228,17 @@ if (
                         <div class="row mb-5">
                             <div class="col-lg-6">
                                 <?php form_input(label: 'Tujuan', name: 'project', value: $document['project'] ?? '', disabled: $isdisabled) ?>
-                                <?php form_input(label: 'Jenis Pembelian', name: 'buy_type', value: $document['buy_type'] ?? '', disabled: $isdisabled) ?>
+                                <?php
+                                form_select(
+                                    label: 'Jenis Pembayaran',
+                                    name: 'buy_type',
+                                    options: array(array('BARANG', 'BARANG'), array('JASA', 'JASA')),
+                                    value: $document['buy_type'] ?? '',
+                                    disabled: $isdisabled
+                                )
+                                ?>
                                 <?php form_textarea(
-                                    label: 'Catatan Pembelian',
+                                    label: 'Catatan Pembayaran',
                                     rows: 3,
                                     name: 'buy_note',
                                     value: $document['buy_note'] ?? '',
@@ -251,6 +259,36 @@ if (
                                 <?php form_input(label: 'Bank Transfer', name: 'transfer_bank', value: $document['transfer_bank'] ?? '', disabled: $isdisabled) ?>
                                 <?php form_input(label: 'No. Rekening', name: 'transfer_account', value: $document['transfer_account'] ?? '', disabled: $isdisabled) ?>
                                 <?php form_input(label: 'Nama Rekening', name: 'transfer_account_name', value: $document['transfer_account_name'] ?? '', disabled: $isdisabled) ?>
+                                <?php form_input(label: 'Jumlah Pembayaran', name: 'transfer_amount', value: $document['transfer_amount'] ?? '', func: "calculate_item(this)", disabled: $isdisabled)
+                                ?>
+                                <?php form_input(label: 'Tanggal Transfer', name: 'transfer_date', value: $document['transfer_date'] ?? '', required: false, disabled: true)
+                                ?>
+                            </div>
+                        </div>
+                    <?php } else if ($type == "pr") { ?>
+                        <div class="row mb-5">
+                            <div class="col-lg-6">
+                                <?php form_input(label: 'Tujuan', name: 'project', value: $document['project'] ?? '', disabled: $isdisabled) ?>
+                                <?php
+                                form_select(
+                                    label: 'Jenis Pembelian',
+                                    name: 'buy_type',
+                                    options: array(array('BARANG', 'BARANG'), array('JASA', 'JASA')),
+                                    value: $document['buy_type'] ?? '',
+                                    disabled: $isdisabled
+                                )
+                                ?>
+                                <?php form_textarea(
+                                    label: 'Catatan Pembelian',
+                                    rows: 3,
+                                    name: 'buy_note',
+                                    value: $document['buy_note'] ?? '',
+                                    required: false,
+                                    disabled: $isdisabled
+                                ) ?>
+                            </div>
+                            <div class="col-lg-6">
+
                             </div>
                         </div>
                     <?php } else if ($type == "all") { ?>
@@ -311,17 +349,19 @@ if (
                         </div>
                     <?php } ?>
 
-                    <?php if ($type == "ca" || $type == "pc" || $type == "pp") { ?>
+                    <?php if ($type == "ca" || $type == "pc" || $type == "pr" || $type == "pp") { ?>
                         <div class="<?= ($iscancomplete || count($item ?? []) > 1 || $type != "ca") ? '' :  'd-none' ?>">
-                            <div class="font-weight-bolder mb-5">DETAIL PENGAJUAN</div>
+                            <div class="font-weight-bolder mb-5">DETAIL</div>
                             <table class="table table-bordered mb-5 table-responsive">
                                 <thead>
                                     <tr>
                                         <th nowrap="nowrap">DESKRIPSI<span class="text-white">----------</span></th>
-                                        <th nowrap="nowrap">UNIT<span class="text-white">----------</span></th>
-                                        <th nowrap="nowrap">@HARGA<span class="text-white">----------</span></th>
-                                        <th nowrap="nowrap">SUBTOTAL<span class="text-white">----------</span></th>
-                                        <th nowrap="nowrap">BUKTI<span class="text-white">----------</span></th>
+                                        <?php if ($type != 'pp') { ?>
+                                            <th nowrap="nowrap">UNIT<span class="text-white">----------</span></th>
+                                            <th nowrap="nowrap">@HARGA<span class="text-white">----------</span></th>
+                                            <th nowrap="nowrap">SUBTOTAL<span class="text-white">----------</span></th>
+                                        <?php } ?>
+                                        <th nowrap="nowrap">LAMPIRAN<span class="text-white">----------</span></th>
                                         <th>
                                             <button type="button" class="btn btn-xs btn-icon btn-success <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?>" <?= $isdisabled && !$iscancomplete ? 'disabled' : '' ?> id="add-item"><i class="fas fa-plus"></i></button>
                                         </th>
@@ -334,15 +374,17 @@ if (
                                             <td>
                                                 <?php form_textarea(label: null, name: 'description[]', value: $row['description'] ?? '', form: false, required: false, disabled: $isdisabled && !$iscancomplete) ?>
                                             </td>
-                                            <td>
-                                                <?php form_input(label: null, name: 'unit[]', type: 'number', value: $row['unit'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled && !$iscancomplete) ?>
-                                            </td>
-                                            <td>
-                                                <?php form_input(label: null, name: 'price[]', value: $row['price'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled && !$iscancomplete) ?>
-                                            </td>
-                                            <td>
-                                                <?php form_input(label: null, name: 'subtotal[]', value: $row['subtotal'] ?? '', form: false, required: false, disabled: true) ?>
-                                            </td>
+                                            <?php if ($type != 'pp') { ?>
+                                                <td>
+                                                    <?php form_input(label: null, name: 'unit[]', type: 'number', value: $row['unit'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled && !$iscancomplete) ?>
+                                                </td>
+                                                <td>
+                                                    <?php form_input(label: null, name: 'price[]', value: $row['price'] ?? '', form: false, required: false, func: "calculate_item(this)", disabled: $isdisabled && !$iscancomplete) ?>
+                                                </td>
+                                                <td>
+                                                    <?php form_input(label: null, name: 'subtotal[]', value: $row['subtotal'] ?? '', form: false, required: false, disabled: true) ?>
+                                                </td>
+                                            <?php } ?>
                                             <td nowrap="nowrap" class="td">
                                                 <?php form_input(label: null, type: "hidden", name: 'file_[]', value: $row['file'] ?? '', form: false, required: false, disabled: $isdisabled && !$iscancomplete) ?>
                                                 <?php form_input(label: null, type: 'file', name: 'file[]', value: '', form: false, required: false, accept: ".jpg, .jpeg, .png", disabled: $isdisabled && !$iscancomplete) ?>

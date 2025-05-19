@@ -65,7 +65,7 @@
                 <tr>
                     <th>#</th>
                     <th>NO. DOKUMEN</th>
-                    <?php if ($type == "ca" || $type == "pc" || $type == "pp") { ?>
+                    <?php if ($type == "ca" || $type == "pc" || $type == "pp" || $type == "pr") { ?>
                         <th>PROYEK</th>
                         <th>TANGGAL SURAT</th>
                         <th>NOMINAL</th>
@@ -80,7 +80,7 @@
                 <tr>
                     <th></th>
                     <th class="searching"><input type="text" class="form-control" /></th>
-                    <?php if ($type == "ca" || $type == "pc" || $type == "pp") { ?>
+                    <?php if ($type == "ca" || $type == "pc" || $type == "pp" || $type == "pr") { ?>
                         <th class="searching"><input type="text" class="form-control" /></th>
                         <th class="searching"><input type="text" class="form-control" /></th>
                         <th class="searching"><input type="text" class="form-control" /></th>
@@ -105,7 +105,7 @@
                     <tr>
                         <td><?= $no++ ?></td>
                         <td><?= $row['document_number'] ?></td>
-                        <?php if ($type == "ca" || $type == "pc" || $type == "pp") { ?>
+                        <?php if ($type == "ca" || $type == "pc" || $type == "pp" || $type == "pr") { ?>
                             <td><?= $row['project'] ?></td>
                             <td><?= custom_date_format($row['create_date'], 'd/m/Y') ?></td>
                             <td>Rp. <?= number_format($row['transfer_amount'] == 0 ? $row['transfer_amount_2'] : $row['transfer_amount']) ?></td>

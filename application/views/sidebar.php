@@ -58,6 +58,16 @@
                     ),
 
                     array(
+                        'document/index/pr',
+                        'fas fa-envelope',
+                        'PURCHASE    REQUEST',
+                        null,
+                        array('MK', 'AP'),
+                        count($this->mod_document->get_document("%", 'pr', $_SESSION['user']['division_id'], $_SESSION['company_id'] ?? "%")),
+                        array('document/index/pr', 'document/form/pr')
+                    ),
+
+                    array(
                         'document/index/pc',
                         'fas fa-envelope',
                         'REIMBURSEMENT',
