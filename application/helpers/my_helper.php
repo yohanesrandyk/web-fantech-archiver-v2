@@ -1,4 +1,21 @@
 <?php
+
+require "vendor/autoload.php";
+
+use NcJoes\OfficeConverter\OfficeConverter;
+use PHPMailer\PHPMailer\Exception;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\SimpleType\JcTable;
+use PhpOffice\PhpWord\SimpleType\TblWidth;
+use PhpOffice\PhpWord\TemplateProcessor;
+use PhpOffice\PhpWord\Shared\Html;
+use PhpOffice\PhpWord\Element\TextRun;
+use Mpdf\Mpdf;
+use Spatie\PdfToImage\Pdf;
+use PHPMailer\PHPMailer\PHPMailer;
+use Google\Client;
+
 function strposX($haystack, $needle, $number = 0)
 {
     return strpos(
@@ -245,4 +262,349 @@ function terbilang($number)
     } else {
         return "Angka terlalu besar";
     }
+}
+
+function rmnedir($folderPath)
+{
+    if (!is_dir($folderPath)) {
+        return false;
+    }
+
+    $items = array_diff(scandir($folderPath), ['.', '..']);
+
+    foreach ($items as $item) {
+        $path = $folderPath . DIRECTORY_SEPARATOR . $item;
+
+        if (is_dir($path)) {
+            rmnedir($path);
+        } else {
+            unlink($path);
+        }
+    }
+
+    return rmdir($folderPath);
+}
+
+
+function count_file($dir, $search)
+{
+    $files = array_filter(scandir($dir), function ($file) use ($dir, $search) {
+        return is_file($dir . DIRECTORY_SEPARATOR . $file)
+            && strpos($file, $search) !== false;
+    });
+
+    return count($files);
+}
+
+function crop_transparent($srcPath, $destPath = null)
+{
+    $img = imagecreatefrompng($srcPath);
+    imagesavealpha($img, true); // Preserve transparency
+
+    $width = imagesx($img);
+    $height = imagesy($img);
+
+    // Initialize bounding box
+    $top = $height;
+    $left = $width;
+    $bottom = 0;
+    $right = 0;
+
+    // Scan image to find bounds
+    for ($y = 0; $y < $height; ++$y) {
+        for ($x = 0; $x < $width; ++$x) {
+            $rgba = imagecolorat($img, $x, $y);
+            $alpha = ($rgba & 0x7F000000) >> 24;
+
+            // Check if pixel is not fully transparent
+            if ($alpha < 127) {
+                if ($x < $left)   $left = $x;
+                if ($x > $right)  $right = $x;
+                if ($y < $top)    $top = $y;
+                if ($y > $bottom) $bottom = $y;
+            }
+        }
+    }
+
+    // If nothing found, skip
+    if ($right < $left || $bottom < $top) {
+        return false; // Fully transparent image
+    }
+
+    $newWidth = $right - $left + 1;
+    $newHeight = $bottom - $top + 1;
+
+    $cropped = imagecreatetruecolor($newWidth, $newHeight);
+    imagesavealpha($cropped, true);
+    $transparent = imagecolorallocatealpha($cropped, 0, 0, 0, 127);
+    imagefill($cropped, 0, 0, $transparent);
+
+    imagecopy($cropped, $img, 0, 0, $left, $top, $newWidth, $newHeight);
+
+    if (!$destPath) {
+        $destPath = $srcPath; // overwrite original
+    }
+
+    imagepng($cropped, $destPath);
+    imagedestroy($img);
+    imagedestroy($cropped);
+
+    return true;
+}
+
+function send_email($to, $subject, $body)
+{
+    $mail = new PHPMailer(true);
+    try {
+        $mail->IsSMTP();
+        $mail->CharSet = "UTF-8";
+
+        $mail->Host       = "mawarserver.ardetamedia.net";
+        $mail->SMTPDebug  = 0;
+        $mail->SMTPAuth   = true;
+        $mail->Port       = 587;
+        $mail->Username   = "yohanes.randy@corsys.co.id";
+        $mail->Password   = "Kurnianto72639!!!";
+        $mail->setFrom("yohanes.randy@corsys.co.id");
+
+        $mail->addAddress($to);
+        $mail->isHTML(false);
+        $mail->Subject = $subject;
+        $mail->Body    = $body;
+        // $mail->AltBody = $body;
+
+        $mail->send();
+    } catch (Exception $e) {
+        $_SESSION["errmsg"] = "Email gagal dikirim. Pesan error: $mail->ErrorInfo | " . $e->getMessage();
+    }
+}
+
+function send_notif($to, $title, $body)
+{
+    $client = new Client();
+    $client->setAuthConfig('yortech-id-firebase-adminsdk-fbsvc-271ff775bd.json');
+    $client->addScope('https://www.googleapis.com/auth/cloud-platform');
+    $accessToken = $client->fetchAccessTokenWithAssertion();
+    $accessToken = $accessToken['access_token'] ?? null;
+
+    $projectId = 'yortech-id';
+    $fcmUrl = "https://fcm.googleapis.com/v1/projects/$projectId/messages:send";
+
+    $data = [
+        'message' => [
+            'token' => $to,
+            'notification' => [
+                'title' => $title,
+                'body' => $body,
+            ],
+        ]
+    ];
+
+    $headers = [
+        'Authorization: Bearer ' . $accessToken,
+        'Content-Type: application/json; UTF-8',
+    ];
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $fcmUrl);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    echo $response;
+}
+
+function docx_to_pdf_api($filename)
+{
+    $ch = curl_init();
+
+    curl_setopt($ch, CURLOPT_URL, 'https://v2.convertapi.com/convert/docx/to/pdf');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer secret_pzzTCDI4P74MgTxu'
+    ]);
+
+    curl_setopt($ch, CURLOPT_POSTFIELDS, [
+        'File' => new CURLFile($filename . '.docx'),
+        'StoreFile' => 'true'
+    ]);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        echo 'Error: ' . curl_error($ch);
+    } else {
+        $result = json_decode($response, true);
+
+        // Download the converted PDF
+        if (isset($result['Files'][0]['Url'])) {
+            $pdfUrl = $result['Files'][0]['Url'];
+            $pdfData = file_get_contents($pdfUrl);
+            file_put_contents($filename . '.pdf', $pdfData);
+        } else {
+            $_SESSION['errmsg'] = $result;
+        }
+    }
+
+    curl_close($ch);
+
+    // return redirect($filename . '.pdf');
+}
+
+function edit_word($template, $data, $filename)
+{
+    $phpWord = new PhpWord();
+    $templateProcessor = new TemplateProcessor($template);
+    $jctable = new JcTable();
+    $tableStyle = new TblWidth();
+
+    $tableStyleArray = [
+        'borderSize' => 10,
+        'borderColor' => '999999',
+        'alignment' => $jctable::CENTER,
+        'unit' => $tableStyle::PERCENT,
+        'width' => 5000,
+    ];
+
+    $trStyle = ['align' => 'center'];
+
+    $thStyle = ['name' => 'Times New Roman', 'size' => 12, 'bold' => true];
+    $tdStyle = ['name' => 'Times New Roman', 'size' => 12];
+
+    $isTemp = false;
+
+    foreach ($data as $key => $value) {
+        if (str_contains($key, 'table')) {
+            $section = $phpWord->addSection();
+            $table = $section->addTable($tableStyleArray);
+
+            $tno = 0;
+            foreach ($value as $tr) {
+                $table->addRow();
+                foreach ($tr as $td) {
+                    $table->addCell(2000, $trStyle)->addText($td, $tno == 0 ? $thStyle : $tdStyle);
+                }
+                $tno++;
+            }
+
+            $templateProcessor->setComplexBlock($key, $table);
+        } else if (str_contains($key, 'html')) {
+            $isTemp = true;
+            if (!is_dir($filename)) mkdir($filename);
+
+            // $mpdf = new Mpdf();
+            $mpdf = new Mpdf([
+                //     'format' => [210, 200],
+                'margin_left'   => 0,
+                'margin_right'  => 0,
+                // 'margin_top'    => 0,
+                // 'margin_bottom' => 0,
+                // 'margin_header' => 0,
+                // 'margin_footer' => 0,
+            ]);
+            $value = '<style>body {font-size: 14pt;}</style>' . $value;
+            $mpdf->WriteHTML($value);
+            $mpdf->Output($filename . '/temp.pdf', 'F');
+
+            $spdf = new Pdf($filename . '/temp.pdf');
+            $spdf->setOutputFormat('png');
+            $spdf->saveAllPagesAsImages($filename);
+
+            $section = $phpWord->addSection();
+            for ($i = 1; $i <= count_file($filename, '.png'); $i++) {
+                crop_transparent($filename . '/' . $i . '.png');
+                $section->addText('${' . $key . '_' . $i . '}');
+            }
+
+            $templateProcessor->setComplexBlock($key, $section);
+        } else if (str_contains($key, 'image')) {
+            $isTemp = true;
+            if (!is_dir($filename)) mkdir($filename);
+
+            $section = $phpWord->addSection();
+            foreach ($value as $i => $element) {
+                if ($element != null) {
+                    $section->addText('${' . $key . '_' . $i . '}');
+                }
+            }
+
+            $templateProcessor->setComplexBlock($key, $section);
+        } else {
+            $templateProcessor->setValue($key, htmlspecialchars($value));
+        }
+    }
+
+    if ($isTemp) {
+        merge_element($template, $templateProcessor, $data, $filename);
+    } else {
+        $templateProcessor->saveAs($filename . ".docx");
+    }
+
+    rmnedir($filename);
+}
+
+function merge_element($template, $templateProcessor, $data, $filename)
+{
+    $tempFile = $filename . '/' . 'temp.docx';
+    $templateProcessor->saveAs($tempFile);
+    $templateProcessor2 = new TemplateProcessor($tempFile);
+
+    foreach ($data as $key => $value) {
+        if (str_contains($key, 'html')) {
+            for ($i = 1; $i <= count_file($filename, '.png'); $i++) {
+                $element = $filename . '/' . $i . '.png';
+                if (file_exists($element)) {
+                    list($width, $height) = getimagesize($element);
+                    $templateProcessor2->setImageValue($key . '_' . $i, [
+                        'path' => $element,
+                        'width' => $width / 1.9,
+                        'height' => $height / 1.9,
+                        'ratio' => false
+                    ]);
+                }
+            }
+        } else if (str_contains($key, 'image')) {
+            foreach ($value as $i => $element) {
+                if ($element != null) {
+                    $element = str_replace(base_url(), "", $element);
+                    $templateProcessor2->setImageValue($key . '_' . $i, [
+                        'path' => $element,
+                        'width' => 300,
+                        'height' => 300,
+                    ]);
+                }
+            }
+        }
+    }
+
+    $templateProcessor2->saveAs($filename . ".docx");
+}
+
+function show_pdf($filename)
+{
+    // return redirect($filename . ".pdf");
+
+    echo "<html><head>";
+    echo '<link rel="shortcut icon" href="https://fantech.id/wp-content/uploads/2023/06/Fantech-Indonesia-2.png" />';
+    echo "<title>" . str_replace('_', ' ', strtoupper(substr($filename, strrpos($filename, '/') + 1))) . "</title>";
+    echo "</head><body style='margin:0px;padding:0px;overflow:hidden;'>";
+    echo '<iframe src="' . base_url() . $filename . ".pdf" . '" style="width:100%;height:100%;"></iframe>';
+    // echo '<iframe src="' . base_url() .  "document/show_word?file=" . $filename . ".docx" . '" style="width:100%;height:100%;"></iframe>';
+    // echo "<iframe src='https://view.officeapps.live.com/op/embed.aspx?src=" . base_url() . $filename . ".docx" . "' width='100%' height='100%'></iframe>";
+    // echo '<iframe src="https://docs.google.com/gview?url=' . base_url() . $filename . ".docx" . '&embedded=true" width="100%" height="100%"></iframe>';
+    echo "</body></html>";
+}
+
+function get_status_color($status)
+{
+    if (substr($status, 0, 1) == 'A') return 'success';
+    if (substr($status, 0, 1) == 'P') return 'primary';
+    if (substr($status, 0, 1) == 'N') return 'warning';
+    return 'danger';
 }

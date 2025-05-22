@@ -114,7 +114,7 @@
                             <td><?= $row['user_create'] ?></td>
                             <td><?= custom_date_format($row['release_date'], 'd/m/Y') ?></td>
                         <?php } ?>
-                        <td><span class="label label-<?= substr($row['status'], 0, 1) == 'A' ? 'success' : (substr($row['status'], 0, 1) == 'P' ? 'primary' : 'danger') ?> label-inline font-weight-lighter mr-2"><?= $row['docstatus_name'] ?></span></td>
+                        <td><span class="label label-<?= get_status_color($row['status']) ?> label-inline font-weight-lighter mr-2"><?= $row['docstatus_name'] ?></span></td>
                         <td>
                             <a href="<?= base_url() ?>document/form/<?= $type ?>/<?= $row['id'] ?>" class="btn btn-danger btn-sm"><i class="la la-file"></i> REVIEW</a>
                             <a href="<?= base_url() ?>document/cetak/<?= $type ?>/<?= $row['id'] ?>" class="btn btn-primary btn-sm"><i class="la la-print"></i> CETAK</a>
@@ -132,7 +132,7 @@
             $("#btn-add").attr("href", "#");
             $("#btn-add").click(function(e) {
                 e.preventDefault();
-                $("#text-errmsg").html("Dokumen <?= $notdone[count($notdone) - 1] ?> belum selesai, harap selesaikan dokumen terlebih dahulu.");
+                $("#text-errmsg").html("Dokumen CA hanya bisa diajukan sebanyak 2x, dokumen <?= $notdone[count($notdone) - 1] ?> belum selesai, harap selesaikan dokumen terlebih dahulu.");
                 show_errmsg_modal();
             });
         <?php } ?>

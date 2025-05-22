@@ -21,7 +21,7 @@ function table_history($data)
                 <tr>
                     <td><?= $no++ ?></td>
                     <td><?= $row['user_update'] ?></td>
-                    <td><span class="label label-<?= substr($row['status_update'], 0, 1) == 'A' ? 'success' : (substr($row['status_update'], 0, 1) == 'P' ? 'primary' : 'danger') ?> label-inline font-weight-lighter mr-2"><?= $row['name'] ?></span></td>
+                    <td><span class="label label-<?= get_status_color($row['status_update']) ?> label-inline font-weight-lighter mr-2"><?= $row['name'] ?></span></td>
                     <td><?= $row['note'] ?></td>
                     <td><?= $row['update_date'] ?></td>
                 </tr>

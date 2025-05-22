@@ -31,15 +31,17 @@
         </div>
         <div class="card-body">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
+            <input type="hidden" name="doctype_ids" value="<?= $row['doctype_ids'] ?? '' ?>">
             <?php
             $options = get_array_options($doctypes, 'code', array('name', ' [', 'code', ']'));
             array_push($options, array('ALL', 'SEMUA DOKUMEN [ALL]'));
             form_select(
                 label: 'Tipe Dokumen',
-                name: 'doctype_id',
+                name: 'doctype_ids_',
                 options: $options,
-                value: $_GET['type'] ?? '0',
-                func: 'set_doctype(this)',
+                value: $row['doctype_ids'] ?? '',
+                func: 'set_doctype_ids(this)',
+                multiple: true,
             ) ?>
             <table class="d-none" id="table-docstatus">
                 <?php function item_docstatus($row, $divisions, $docstatus)
@@ -50,8 +52,7 @@
                         </td>
                         <td>
                             <input type="hidden" name="id[]" value="<?= $row['id'] ?? '' ?>">
-                            <input type="hidden" name="doctype_ids[]" value="<?= $row['doctype_ids'] ?? '' ?>">
-                            <?php form_input(label: null, name: 'code[]', value: $row['code'] ?? '', required: false, disabled: (isset($row['code']) ? true : false)) ?>
+                            <?php form_input(label: null, name: 'code[]', value: $row['code'] ?? '', required: false) ?>
                         </td>
                         <td>
                             <?php form_input(label: null, name: 'name[]', value: $row['name'] ?? '', required: false) ?>
@@ -72,6 +73,18 @@
                                 options: get_array_options($divisions, 'id', array('name', ' [', 'code', ']')),
                                 value: $row['to_division_id'] ?? '0',
                                 required: false,
+                            ) ?>
+                        </td>
+                        <td>
+                            <input type="hidden" name="roles[]" value="<?= $row['roles'] ?? '' ?>">
+                            <?php form_select(
+                                label: null,
+                                name: 'roles_[]',
+                                options: array(array('MK', 'MAKER [MK]'), array('AP', 'APPROVER [AP]')),
+                                value: $row['roles'] ?? '',
+                                required: false,
+                                multiple: true,
+                                func: 'set_roles(this)',
                             ) ?>
                         </td>
                         <td>
@@ -112,6 +125,7 @@
                         <th nowrap="nowrap">STATUS<span class="text-white">-</span>DOKUMEN</th>
                         <th nowrap="nowrap">KODE<span class="text-white">-</span>APPROVE</th>
                         <th nowrap="nowrap">TO<span class="text-white">-</span>DIVISI</th>
+                        <th nowrap="nowrap">ROLES<span class="text-white">-----</span></th>
                         <th nowrap="nowrap">CC<span class="text-white">-</span>DIVISI</th>
                         <th nowrap="nowrap">KODE<span class="text-white">-</span>REVISI</th>
                         <th><button type="button" class="btn btn-icon btn-sm btn-success" onclick="$(this).closest('table').find('tbody').append($('#table-docstatus tbody').html());"><i class="la la-plus"></i></button></th>
@@ -142,8 +156,15 @@
         $(e).closest("tr").find("input[name='cc_division_ids[]']").val(cc_division_ids.join(","));
     }
 
+    function set_roles(e) {
+        var roles = $(e).val();
+        $(e).closest("tr").find("input[name='roles[]']").val(roles.join(","));
+    }
+
     function set_doctype(e) {
-        window.location = "<?= base_url() ?>docstatus/form?type=" + e.value;
+        var doctype_ids = $(e).val();
+        $(e).closest("form").find("input[name='doctype_ids']").val(doctype_ids.join(","));
+        window.location = "<?= base_url() ?>docstatus/form?type=" + doctype_ids.join(",");
     }
     const tbody = document.querySelector(".list");
     const items = document.querySelectorAll(".item");

@@ -1,5 +1,5 @@
 <?php
-function form_input($label, $name, $value, $type = 'text', $disabled = null, $maxlength = null, $func = null, $required = true, $form = true, $accept = "")
+function form_input($label, $name, $value, $type = 'text', $disabled = null, $maxlength = null, $func = null, $required = true, $form = true, $accept = "", $max = null, $min = null, $func2 = null)
 {
     $value = (isset($_SESSION['old'][$name]) ? (!is_array($_SESSION['old'][$name]) ? $_SESSION['old'][$name] : null) : null) ?? $value ?? '';
 ?>
@@ -13,11 +13,14 @@ function form_input($label, $name, $value, $type = 'text', $disabled = null, $ma
             <?= $maxlength ? 'maxlength="' . $maxlength . '"' : '' ?>
             type="<?= $type ?>"
             name="<?= $name ?>"
+            max="<?= $max ?>"
+            min="<?= $min ?>"
             id="<?= $name ?>"
             value="<?= $value ?>"
             <?= $disabled ? 'readonly' : '' ?>
             onkeyup="<?= $func ?>"
-            onchange="<?= $func ?>"
+            <?= $func2 ? 'onchange="' . $func2 . '"' : '' ?>
+            <?= !$func2 && $func ? 'onchange="' . $func . '"' : '' ?>
             accept="<?= $accept ?>"
             <?= $required ? 'required' : '' ?> />
         <img src onerror="<?= str_contains($func ?? "", "setCurrency") ? "setCurrency($(this).closest('div').find('input'))"  : $func ?>" class="d-none">

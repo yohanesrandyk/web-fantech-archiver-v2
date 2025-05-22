@@ -42,7 +42,9 @@ class docstatus extends CI_Controller
                 'code'              => strtoupper($_POST['code'][$i]),
                 'name'              => $_POST['name'][$i],
                 "to_division_id"    => $_POST["to_division_id"][$i],
+                "roles"             => $_POST["roles"][$i],
                 "cc_division_ids"   => $_POST["cc_division_ids"][$i],
+                'doctype_ids'       => $_POST["doctype_ids"],
                 'approve_code'      => strtoupper($_POST['approve_code'][$i]),
                 'reject_code'       => strtoupper($_POST['reject_code'][$i]),
                 'code_sort'         => $i,
@@ -57,7 +59,7 @@ class docstatus extends CI_Controller
 
         $_SESSION['old'] = null;
 
-        return redirect('docstatus');
+        return redirect('docstatus/form?type=' . $_POST['doctype_ids']);
     }
 
     public function delete($id)

@@ -1,20 +1,6 @@
 <?php
 defined("BASEPATH") or exit("No direct script access allowed");
 
-require "vendor/autoload.php";
-
-use NcJoes\OfficeConverter\OfficeConverter;
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-use PhpOffice\PhpWord\IOFactory;
-use PhpOffice\PhpWord\PhpWord;
-use PhpOffice\PhpWord\SimpleType\JcTable;
-use PhpOffice\PhpWord\SimpleType\TblWidth;
-use PhpOffice\PhpWord\TemplateProcessor;
-use PhpOffice\PhpWord\Shared\Html;
-use PhpOffice\PhpWord\Element\TextRun;
-use Google\Client;
-
 class Document extends CI_Controller
 {
 
@@ -125,6 +111,7 @@ class Document extends CI_Controller
                 "from_division_id"  => $_POST["from_division_id"] ?? '',
                 "note"              => $_POST["note"] ?? '',
                 "user_create"       => $_POST["user_create"] ?? '',
+                "user_note"         => $_POST["user_note"] ?? '',
                 "release_date"      => $_POST["release_date"] ?? '',
                 "create_date"       => $_POST["create_date"] ?? '',
                 "status"            => $_POST["status"] ?? '',
@@ -165,6 +152,7 @@ class Document extends CI_Controller
         } catch (Exception $e) {
             $this->db->trans_rollback();
         }
+        // $this->db->trans_rollback();
         $this->db->trans_commit();
 
         $_SESSION['old'] = null;
@@ -177,7 +165,7 @@ class Document extends CI_Controller
         $isfile = false;
         $this->mod_file_document->remove_file_document($document_id ?? '');
         for ($i = 0; $i < count($_POST['note_f'] ?? []); $i++) {
-            if ($_POST['note_f'][$i] != "") {
+            if (!empty($_POST['note_f'][$i] ?? '') || !empty($_FILES["file_f"]["tmp_name"][$i])) {
                 $data = array(
                     'document_id'     => $document_id,
                     'note'            => $_POST['note_f'][$i]
@@ -205,12 +193,14 @@ class Document extends CI_Controller
         if ($type == "ca" || $type == "pc" || $type == "pp" || $type == "pr") {
             $this->mod_document_item->remove_document_item($data['document_id'] ?? '', $type);
             for ($i = 0; $i < count($_POST['description'] ?? []); $i++) {
-                if ($_POST['description'][$i] ?? '' != "") {
+                if (!empty($_POST['description'][$i] ?? '') || !empty($_FILES["file"]["tmp_name"][$i])) {
                     $data = array(
                         'document_id'     => $data['document_id'],
                         'description'     => $_POST['description'][$i] ?? '',
-                        'unit'            => $_POST['unit'][$i],
-                        'price'           => str_replace(",", "", $_POST['price'][$i])
+                        'description_1'   => $_POST['description_1'][$i] ?? '',
+                        'description_2'   => $_POST['description_2'][$i] ?? '',
+                        'unit'            => $_POST['unit'][$i] ?? '0',
+                        'price'           => str_replace(",", "", $_POST['price'][$i] ?? '0')
                     );
 
                     if (move_uploaded_file($_FILES["file"]["tmp_name"][$i], "_shared/upload/" . $_FILES["file"]["name"][$i])) {
@@ -254,26 +244,30 @@ class Document extends CI_Controller
             $data = array(
                 "document_id"      => $id,
                 "update_date"      => date("Y-m-d H:i:s"),
-                "user_update"      => $_SESSION['user']['fullname'],
+                "user_update"      => $_POST["user_note"],
                 "status_update"    => $_POST["status"],
                 "note"             => $_POST["note"],
                 "from_division_id" => $_SESSION['user']['division_id'],
+                "user_update_id"   => $_SESSION['user']['id'],
             );
             $this->mod_document_his->add_document_his($data);
 
             $division_id = $this->mod_docstatus->get_docstatus($_POST["status"]);
             $division_id = !empty($division_id) ? $division_id[0]['to_division_id'] : "0";
             $division_id = $division_id != '0' ? $division_id : $_SESSION['user']['division_id'];
-            $notification = array(
-                "title"     => 'PEMBERITAHUAN! TERDAPAT 1 DOKUMEN BARU DENGAN NOMOR ' . (!empty($_POST["document_number"] ?? "") ? $_POST["document_number"] : $document_number),
-                "body"  =>  $_SESSION['user']['username'] . " : HARAP DAPAT SEGERA MELAKUKAN REVIEW TERHADAP DOKUMEN. " . $_POST["note"],
-                "to_division_id" => $division_id,
-                "notif_date" => date("Y-m-d H:i:s"),
-            );
-            $this->mod_notification->add_notification($notification);
-
-            foreach ($this->mod_user->get_user('%', $division_id) as $row) {
-                $this->send_notif($row["fcm_token"], $notification['title'], $notification['body']);
+            $document_number_ = $_POST["document_number"] ?? "";
+            $document_number_ = !empty($document_number_) ? $document_number_ : $document_number;
+            if (!empty($document_number_)) {
+                $notification = array(
+                    "title"     => 'PEMBERITAHUAN! TERDAPAT DOKUMEN DENGAN NOMOR ' . $document_number_,
+                    "body"  =>  $_SESSION['user']['username'] . " : HARAP DAPAT SEGERA MELAKUKAN REVIEW TERHADAP DOKUMEN. " . $_POST["note"],
+                    "to_division_id" => $division_id,
+                    "notif_date" => date("Y-m-d H:i:s"),
+                );
+                $this->mod_notification->add_notification($notification);
+                foreach ($this->mod_user->get_user('%', $division_id) as $row) {
+                    send_notif($row["fcm_token"], $notification['title'], $notification['body']);
+                }
             }
         }
 
@@ -308,7 +302,7 @@ class Document extends CI_Controller
         }
 
         $filename = "_shared/surat/";
-        $filename .= str_replace('/', '-', $data["doctype_name"]) . "-" . $data["company_code"] . "-" . str_replace("/", "-", $data["document_number"]) . "-" . date("YmdHis");
+        $filename .= str_replace('/', '-', $data["doctype_name"]) . "-" . $data["company_code"] . "-" . str_replace("/", "-", $data["document_number"]);
 
         $docstatus = $this->mod_docstatus->get_docstatus('%', '%', '%' . $type . '%', '%');
         foreach ($docstatus as $row) {
@@ -324,8 +318,9 @@ class Document extends CI_Controller
             "from_division" => $data["from_division"],
             "to_division" => $docstatus,
             "html_content" => $data["content"],
-            "release_date" => ucwords(custom_date_format($data["release_date"], 'd F Y'))
+            "release_date" => custom_date_format($data["release_date"], 'd F Y')
         );
+        $data_["release_date"] = ucwords(strtolower($data_["release_date"]));
 
         if ($type == "ca" || $type == "pc" || $type == "pp" || $type == "pr") {
             $data_his_pd = $this->mod_document_his->get_document_his($id, 'PAC');
@@ -338,64 +333,84 @@ class Document extends CI_Controller
             $data_["user_create"] = $data["user_create"];
             $data_["from_division"] = $data["from_division"];
             $data_["create_date"] = custom_date_format($data["create_date"], 'd F Y');
-            $data_["user_pend"] = '[' . ($data_his_pd[0]['user_update'] ?? '') . ']';
-            $data_["pend_date"] = '[' . ((!empty($data_his_pd) ? custom_date_format($data_his_pd[0]['update_date'], 'd/m/Y H:i:s') : '')) . ']';
-            $data_["user_appr"] = '[' . ($data_his_ap[0]['user_update'] ?? '') . ']';
-            $data_["appr_date"] = '[' . ((!empty($data_his_ap) ? custom_date_format($data_his_ap[0]['update_date'], 'd/m/Y H:i:s') : '')) . ']';
-            $data_["user_acc"] = '[' . ($data_his_ac[0]['user_update'] ?? '') . ']';
-            $data_["acc_date"] = '[' . ((!empty($data_his_ac) ? custom_date_format($data_his_ac[0]['update_date'], 'd/m/Y H:i:s') : '')) . ']';
-            $data_["user_dir"] = '[' . ($data_his_dr[0]['user_update'] ?? '') . ']';
-            $data_["dir_date"] = '[' . ((!empty($data_his_dr) ? custom_date_format($data_his_dr[0]['update_date'], 'd/m/Y H:i:s') : '')) . ']';
-            $data_["user_fin"] = '[' . ($data_his_fn[0]['user_update'] ?? '') . ']';
-            $data_["fin_date"] = '[' . ((!empty($data_his_fn) ? custom_date_format($data_his_fn[0]['update_date'], 'd/m/Y H:i:s') : '')) . ']';
+            $data_["create_date"] = ucwords(strtolower($data_["create_date"]));
+
+            $data_["user_pend"] = ($data_his_pd[0]['user_update'] ?? '');
+            $data_["pend_date"] = ((!empty($data_his_pd) ? custom_date_format($data_his_pd[0]['update_date'], 'd/m/Y H:i:s') : ''));
+            $data_["user_appr"] = ($data_his_ap[0]['user_update'] ?? '');
+            $data_["appr_date"] = ((!empty($data_his_ap) ? custom_date_format($data_his_ap[0]['update_date'], 'd/m/Y H:i:s') : ''));
+            $data_["user_acc"] =  ($data_his_ac[0]['user_update'] ?? '');
+            $data_["acc_date"] =  ((!empty($data_his_ac) ? custom_date_format($data_his_ac[0]['update_date'], 'd/m/Y H:i:s') : ''));
+            $data_["user_dir"] =  ($data_his_dr[0]['user_update'] ?? '');
+            $data_["dir_date"] =  ((!empty($data_his_dr) ? custom_date_format($data_his_dr[0]['update_date'], 'd/m/Y H:i:s') : ''));
+            $data_["user_fin"] =  ($data_his_fn[0]['user_update'] ?? '');
+            $data_["fin_date"] =  ((!empty($data_his_fn) ? custom_date_format($data_his_fn[0]['update_date'], 'd/m/Y H:i:s') : ''));
 
             $data_['tujuan'] = $data["project"];
 
             if ($type == "ca" || $type == "pc" || $type == "pr") {
                 $data_["table_item"] = array();
                 $data_["image_item"] = array();
-                $data_["table_item"][] = array("No", "Keterangan Penggunaan", "Jumlah");
+                if ($type == "pr") {
+                    $data_["table_item"][] = array("No", "Keterangan", "Spesifikasi / Ukuran", "Quantity", "Leadtime", "Jumlah");
+                } else {
+                    $data_["table_item"][] = array("No", "Keterangan", "Jumlah");
+                }
                 $no = 1;
                 $total = 0;
                 foreach ($this->mod_document_item->get_document_item($id, $type) as $row) {
                     if ($row["price"] == '0') continue;
                     $subtotal = (int) $row["unit"] * (int) $row["price"];
                     $total += $subtotal;
-                    array_push($data_["table_item"], array(
-                        $no++,
-                        $row["description"] . " " . $row["unit"] . "x @" . number_format($row["price"]),
-                        number_format($subtotal)
-                    ));
+                    if ($type == "pr") {
+                        array_push($data_["table_item"], array(
+                            $no++,
+                            $row["description"] . " Rp. " . number_format($row["price"]),
+                            $row["description_1"],
+                            $row["unit"],
+                            $row["description_2"],
+                            number_format($subtotal)
+                        ));
+                    } else {
+                        array_push($data_["table_item"], array(
+                            $no++,
+                            $row["description"] . " " . $row["unit"] . "x @" . number_format($row["price"]),
+                            number_format($subtotal)
+                        ));
+                    }
+
                     array_push($data_["image_item"], $row["file"] ?? null);
                 }
-                array_push($data_["table_item"], array("", "Total", number_format($total)));
-                array_push($data_["table_item"], array("", "Jumlah yang diterima", number_format($data['transfer_amount'])));
+                if ($type == "pr") {
+                    array_push($data_["table_item"], array("", "", "", "",  "Total", number_format($total)));
+                } else {
+                    array_push($data_["table_item"], array("", "Total", number_format($total)));
+                }
+                if ($type == "ca") {
+                    array_push($data_["table_item"], array("", "Jumlah yang diterima", number_format($data['transfer_amount'])));
+                }
                 $data_["transfer_date"] = !str_contains($data["transfer_date"], '0000') ? custom_date_format($data["transfer_date"] ?? '', 'd F Y') : '';
+                $data_["transfer_date"] = ucwords(strtolower($data_["transfer_date"]));
             }
 
             if ($type == 'pp') {
-                $total = 0;
-                $data_["image_item"] = array();
-                foreach ($this->mod_document_item->get_document_item($id, $type) as $row) {
-                    if ($row["price"] == '0') continue;
-                    $subtotal = (int) $row["unit"] * (int) $row["price"];
-                    $total += $subtotal;
-                    array_push($data_["image_item"], $row["file"] ?? null);
-                }
-                $data_['transfer_amount'] = number_format($total);
-                $data_['transfer_amount_text'] = terbilang($total) . "rupiah";
+                $data_['transfer_amount'] = number_format($data['transfer_amount']);
+                $data_['transfer_amount_text'] = terbilang($data['transfer_amount']) . "rupiah";
                 $data_['transfer_method'] = ($data["transfer_method"] ?? '') == 'B' ? 'TRANSFER' : 'TUNAI';
                 $data_['transfer_account'] = $data["transfer_account"] ?? '';
                 $data_['transfer_bank'] = $data["transfer_bank"] ?? '';
                 $data_['transfer_account_name'] = ' atas nama ' . ($data["transfer_account_name"] ?? '');
                 $data_["transfer_date"] = !str_contains($data["transfer_date"], '0000') ? custom_date_format($data["transfer_date"] ?? '', 'd F Y') : '';
+                $data_["transfer_date"] = ucwords(strtolower($data_["transfer_date"]));
             }
         }
 
-        $data_["print_date"] = custom_date_format(date("Y-m-d H:i:s"), 'd F Y H:i:s') . ' . ' . $data["user_create"] . ' . CETAKAN KE-' . (($data["print"] ?? 0) + 1);
+        $data_["print_date"] = "TANGGAL CETAK : " . custom_date_format(date("Y-m-d H:i:s"), 'd F Y H:i:s') . ' . ' . $data["user_create"] . ' . CETAKAN KE-' . (($data["print"] ?? 0) + 1);
+        $data_["print_date"] = strtoupper($data_["print_date"]);
 
-        $this->edit_word($template, $data_, $filename . ".docx");
-        $this->word_to_pdf($filename);
+        edit_word($template, $data_, $filename);
+        docx_to_pdf_api($filename);
+        show_pdf($filename);
     }
 
     public function delete($type, $id)
@@ -407,253 +422,9 @@ class Document extends CI_Controller
         return redirect("document/index/$type");
     }
 
-    function edit_word($template, $data, $filename)
+    function show_word()
     {
-        $phpWord = new PhpWord();
-        $templateProcessor = new TemplateProcessor($template);
-        $jctable = new JcTable();
-        $tableStyle = new TblWidth();
-
-        $tableStyleArray = [
-            'borderSize' => 10,
-            'borderColor' => '999999',
-            'alignment' => $jctable::CENTER,
-            'unit' => $tableStyle::PERCENT,
-            'width' => 5000,
-        ];
-
-        $trStyle = ['align' => 'center'];
-        $thStyle = ['size' => 11, 'bold' => true];
-        $tdStyle = ['size' => 11];
-
-        $hasHtml = false;
-
-        foreach ($data as $key => $value) {
-            if (str_contains($key, 'table')) {
-                $section = $phpWord->addSection();
-                $table = $section->addTable($tableStyleArray);
-
-                $tno = 0;
-                foreach ($value as $tr) {
-                    $table->addRow();
-                    foreach ($tr as $td) {
-                        $table->addCell(2000, $trStyle)->addText($td, $tno == 0 ? $thStyle : $tdStyle);
-                    }
-                    $tno++;
-                }
-
-                $templateProcessor->setComplexBlock($key, $table);
-            } else if (str_contains($key, 'html')) {
-                $hasHtml = true;
-                $html = $this->clean_html($value);
-
-                $phpWord2 = new PhpWord();
-                $section2 = $phpWord2->addSection();
-                Html::addHtml($section2, $html, false, false);
-                $elements = $section2->getElements();
-
-                $section = $phpWord->addSection();
-                foreach ($elements as $i => $element) {
-                    $section->addText('${' . $key . '_' . $i . '}');
-                }
-
-                $templateProcessor->setComplexBlock($key, $section);
-            } else if (str_contains($key, 'image')) {
-                $section = $phpWord->addSection();
-                foreach ($value as $i => $element) {
-                    if ($element != null) {
-                        $section->addText('${' . $key . '_' . $i . '}');
-                    }
-                }
-
-                $templateProcessor->setComplexBlock($key, $section);
-            } else {
-                $templateProcessor->setValue($key, htmlspecialchars($value));
-            }
-        }
-
-        if ($hasHtml) {
-            $tempFile = $template . '_temp.docx';
-            $templateProcessor->saveAs($tempFile);
-            $templateProcessor2 = new TemplateProcessor($tempFile);
-
-            foreach ($data as $key => $value) {
-                if (str_contains($key, 'html')) {
-                    $html = $this->clean_html($value);
-
-                    $phpWord2 = new PhpWord();
-                    $section2 = $phpWord2->addSection();
-                    Html::addHtml($section2, $html, false, false);
-                    $elements = $section2->getElements();
-
-                    foreach ($elements as $i => $element) {
-                        if ($element instanceof \PhpOffice\PhpWord\Element\Image) {
-                            $templateProcessor2->setImageValue($key . '_' . $i, [
-                                'path' => $element->getSource(),
-                                'width' => 500,
-                                'height' => 500,
-                            ]);
-                        } else {
-                            $templateProcessor2->setComplexBlock($key . '_' . $i, $element);
-                        }
-                    }
-                } else if (str_contains($key, 'image')) {
-                    foreach ($value as $i => $element) {
-                        if ($element != null) {
-                            $element = str_replace(base_url(), "", $element);
-                            $templateProcessor2->setImageValue($key . '_' . $i, [
-                                'path' => $element,
-                                'width' => 300,
-                                'height' => 300,
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            $templateProcessor2->saveAs($filename);
-        } else {
-            $templateProcessor->saveAs($filename);
-        }
-    }
-
-    function base64_to_temp_image(string $base64, string $ext = 'jpg'): string
-    {
-        $data = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $base64));
-        $filePath = '_shared/tmp/img_' . uniqid() . '.' . $ext;
-        if (file_put_contents($filePath, $data)) {
-            return $filePath;
-        } else {
-            throw new Exception("Failed to write the image to temp file.");
-        }
-    }
-
-    function clean_html($html)
-    {
-        // echo "<pre>";
-        // echo $html;
-        // echo "</pre>";
-
-        $html = preg_replace('/<br([^>]*)>/', '<br $1/>', $html);
-        $html = preg_replace('/<hr([^>]*)>/', '<hr $1/>', $html);
-        $html = preg_replace('/<img([^>]*)>/', '<img $1/>', $html);
-        $html = preg_replace('/<table([^>]*)>/', '<table border="1" style="width:100%" $1>', $html);
-
-        if (preg_match_all('/<img[^>]+src="data:image\/([^;]+);base64,([^"]+)"[^>]*>/i', $html, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $match) {
-                $ext = $match[1];
-                $base64 = 'data:image/' . $match[1] . ';base64,' . $match[2];
-                $tempFile = base_url() . $this->base64_to_temp_image($base64, $ext);
-                $html = str_replace($match[0], '<img src="' . $tempFile . '"/>', $html);
-            }
-        }
-
-        $html = preg_replace('/<p([^>]*)>/', '<p>', $html);
-        // $html = preg_replace('/<p([^>]*)>/', '<br/>', $html);
-        $html = preg_replace('/<b([^>]*)>/', '', $html);
-        $html = preg_replace('/<i([^>]*)>/', '', $html);
-        $html = preg_replace('/<span([^>]*)>/', '<span>', $html);
-
-        // $html = preg_replace('/<span([^>]*)>/', '', $html);
-        // $html = str_replace('</span>', '', $html);
-
-        $html = str_replace('</b>', '', $html);
-        $html = str_replace('</i>', '', $html);
-        // $html = str_replace('</p>', '', $html);
-        $html = str_replace('<o:p>', '', $html);
-        $html = str_replace('</o:p>', '', $html);
-
-        $html = preg_replace('/<!--([^>]*)>/', '', $html);
-
-        $html = str_replace('&nbsp;', '', $html);
-
-        // $html = preg_replace('/<p><img([^>]*)>/', '<img $i>', $html);
-        // $html = preg_replace('/<span><img([^>]*)>/', '<img $1>', $html);
-        // $html = preg_replace('/<img([^>]*)><\/p>/', '/<img([^>]*)>/', $html);
-        // $html = preg_replace('/<img([^>]*)><\/span>/', '/<img([^>]*)>/', $html);
-
-        // echo "<pre>";
-        // echo $html;
-        // echo "</pre>";
-
-        return $html;
-    }
-
-    function word_to_pdf($filename)
-    {
-        echo "<html><head>";
-        echo '<link rel="shortcut icon" href="https://fantech.id/wp-content/uploads/2023/06/Fantech-Indonesia-2.png" />';
-        echo "<title>" . str_replace('_', ' ', strtoupper(substr($filename, strrpos($filename, '/') + 1))) . "</title>";
-        echo "</head><body style='margin:0px;padding:0px;overflow:hidden;'>";
-        // 		echo '<iframe src="' . base_url() .  "cetak/show_word?file=" . $filename . ".docx" . '" style="width:100%;height:100%;"></iframe>';
-        echo "<iframe src='https://view.officeapps.live.com/op/embed.aspx?src=" . base_url() . $filename . ".docx" . "' width='100%' height='100%'></iframe>";
-        // 		echo '<iframe src="https://docs.google.com/gview?url=' . base_url() . $filename . ".docx" . '&embedded=true" width="100%" height="100%"></iframe>';
-        echo "</body></html>";
-    }
-
-    function send_email($to, $subject, $body)
-    {
-        $mail = new PHPMailer(true);
-        try {
-            $mail->IsSMTP();
-            $mail->CharSet = "UTF-8";
-
-            $mail->Host       = "mawarserver.ardetamedia.net";
-            $mail->SMTPDebug  = 0;
-            $mail->SMTPAuth   = true;
-            $mail->Port       = 587;
-            $mail->Username   = "yohanes.randy@corsys.co.id";
-            $mail->Password   = "Kurnianto72639!!!";
-            $mail->setFrom("yohanes.randy@corsys.co.id");
-
-            $mail->addAddress($to);
-            $mail->isHTML(false);
-            $mail->Subject = $subject;
-            $mail->Body    = $body;
-            // $mail->AltBody = $body;
-
-            $mail->send();
-        } catch (Exception $e) {
-            $this->session->set_flashdata("errmsg", "Email gagal dikirim. Pesan error: $mail->ErrorInfo | " . $e->getMessage());
-        }
-    }
-
-    function send_notif($to, $title, $body)
-    {
-        $client = new Client();
-        $client->setAuthConfig('yortech-id-firebase-adminsdk-fbsvc-271ff775bd.json');
-        $client->addScope('https://www.googleapis.com/auth/cloud-platform');
-        $accessToken = $client->fetchAccessTokenWithAssertion();
-        $accessToken = $accessToken['access_token'] ?? null;
-
-        $projectId = 'yortech-id';
-        $fcmUrl = "https://fcm.googleapis.com/v1/projects/$projectId/messages:send";
-
-        $data = [
-            'message' => [
-                'token' => $to,
-                'notification' => [
-                    'title' => $title,
-                    'body' => $body,
-                ],
-            ]
-        ];
-
-        $headers = [
-            'Authorization: Bearer ' . $accessToken,
-            'Content-Type: application/json; UTF-8',
-        ];
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $fcmUrl);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        echo $response;
+        $data["file"] = $_GET["file"];
+        $this->load->view("cetak", $data);
     }
 }
